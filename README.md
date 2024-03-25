@@ -10,5 +10,5 @@ This project includes code derived from [LLMTest_NeedleInAHaystack](https://gith
 
 Original project authored by [gkamradt](https://github.com/gkamradt).
 
-The original project's license file (LICENSE) can be found in this repository.
+The original project's license file ([LICENSE](https://github.com/dff652/LLM_Test/blob/main/LICENSE.txt) can be found in this repository.
 
