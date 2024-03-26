@@ -61,7 +61,7 @@ def test_qwen(depth_percent, context_length, retrieval_question, needle):
 needle = "\n在旧金山最好的事情是在一个阳光明媚的日子里吃三明治并坐在多洛雷斯公园。\n"
 retrieval_question = "在旧金山最好的事情是什么？"
 haystack = "PaulGrahamEssays"
-test_qwen([30,50,70,90], [8000,8500,9000,9500], retrieval_question, needle)
+test_qwen([30,50,70,90], [9500], retrieval_question, needle)
 # test_qwen([10,30,50,70,90], [4000,4500,5000,5500,6000,6500,7000], retrieval_question, needle)
 
 

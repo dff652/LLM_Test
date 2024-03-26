@@ -36,7 +36,7 @@ class OpenAIEvaluator(Evaluator):
         self.question_asked = question_asked
 
         # api_key = os.getenv('NIAH_EVALUATOR_API_KEY')
-        api_key = ''
+        api_key = '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'
         if (not api_key):
             raise ValueError("NIAH_EVALUATOR_API_KEY must be in env for using openai evaluator.")
 

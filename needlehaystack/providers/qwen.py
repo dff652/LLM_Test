@@ -84,6 +84,7 @@ class Qwen(ModelProvider):
                 "content": f"{retrieval_question} Don't give information outside the document or repeat your findings"
             }]
         
+        
     def encode_text_to_tokens(self, text: str) -> list[int]:
         
         return self.tokenizer.encode(text)
@@ -123,3 +124,16 @@ class Qwen(ModelProvider):
                 | qwen_model 
                 )
         return chain
+    
+    def generate_answer(self, retrieval_question: str) ->  str | list[dict[str, str]]:
+        
+        return [{
+                "role": "system",
+                "content": "You are a helpful AI bot that answers questions for a user. Keep your response short and direct"
+            },
+            {
+                "role": "user",
+                "content": f"{retrieval_question} Don't give fake information or repeat your findings"
+            }]
+        
+        

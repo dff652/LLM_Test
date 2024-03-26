@@ -14,3 +14,6 @@ class ModelProvider(ABC):
 
     @abstractmethod
     def decode_tokens(self, tokens: list[int], context_length: Optional[int] = None) -> str: ...
+    
+    @abstractmethod
+    def generate_answer(self, retrieval_question: str) -> str | list[dict[str, str]]: ...
