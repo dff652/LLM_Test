@@ -4,6 +4,7 @@ from .evaluator import Evaluator
 
 from langchain.evaluation import load_evaluator
 from langchain_community.chat_models import ChatOpenAI
+from ..config.private_config import OPENAI_API_KEY
 
 class OpenAIEvaluator(Evaluator):
     DEFAULT_MODEL_KWARGS: dict = dict(temperature=0)
@@ -36,7 +37,7 @@ class OpenAIEvaluator(Evaluator):
         self.question_asked = question_asked
 
         # api_key = os.getenv('NIAH_EVALUATOR_API_KEY')
-        api_key = ''
+        api_key = OPENAI_API_KEY
         if (not api_key):
             raise ValueError("NIAH_EVALUATOR_API_KEY must be in env for using openai evaluator.")
 

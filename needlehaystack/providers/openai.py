@@ -8,7 +8,7 @@ from langchain.prompts import PromptTemplate
 import tiktoken
 
 from .model import ModelProvider
-
+from ..config.private_config import *
 
 class OpenAI(ModelProvider):
     """
@@ -38,7 +38,7 @@ class OpenAI(ModelProvider):
             ValueError: If NIAH_MODEL_API_KEY is not found in the environment.
         """
         # api_key = os.getenv('NIAH_MODEL_API_KEY')
-        api_key = ''
+        api_key = OPENAI_API_KEY
         if (not api_key):
             raise ValueError("NIAH_MODEL_API_KEY must be in env.")
 
@@ -147,7 +147,7 @@ class OpenAI(ModelProvider):
             input_variables=["context", "question"],
         )
         # Create a LangChain runnable
-        model = ChatOpenAI(temperature=0, model=self.model_name)
+        model = ChatOpenAI(temperature=0, model=self.model_name,api_key=self.api_key)
         chain = ( {"context": lambda x: context,
                   "question": itemgetter("question")} 
                 | prompt 
