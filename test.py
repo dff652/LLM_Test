@@ -46,6 +46,7 @@ def test_qwen(depth_percent, context_length, retrieval_question, needle):
                           question_dir = "Exam/",
                           exam_results_dir = "",
                           exam_set = "exam",
+                          frac =1 
                           )
     print(66666)
     ht.start_test()
@@ -99,7 +100,8 @@ ht = LLMExamTester(model_to_test=qwen_model,
                           question_dir = "Exam",
                           exam_results_dir = "",
                           exam_set = "exam",
-                          num_concurrent_requests = 2
+                          num_concurrent_requests = 2,
+                          frac = 1
                           )
 print(66666)
 ht.start_test()
