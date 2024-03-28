@@ -231,7 +231,7 @@ class LLMNeedleHaystackTester:
             
             # Save the result to file for retesting
             with open(f'{results_dir}{context_file_location}_results_{needle_language}.json', 'w') as f:
-                json.dump(results, f)
+                json.dump(testing_results, f)
 
         if self.seconds_to_sleep_between_completions:
             await asyncio.sleep(self.seconds_to_sleep_between_completions)
@@ -241,7 +241,8 @@ class LLMNeedleHaystackTester:
         Checks to see if a result has already been evaluated or not
         """
         base_dir = os.path.abspath(os.path.dirname(__file__))
-        results_dir = os.path.join(base_dir, 'results/')
+        parent_dir = os.path.abspath(os.path.join(base_dir, os.pardir))
+        results_dir = os.path.join(parent_dir, 'results/')
         # results_dir = 'results/'
         if not os.path.exists(results_dir):
             return False
