@@ -1,4 +1,4 @@
-from needlehaystack import LLMNeedleHaystackTester
+from needlehaystack import LLMNeedleHaystackTester, LLMExamTester
 from needlehaystack.providers import qwen
 from needlehaystack.evaluators import openai
 import tqdm
@@ -31,14 +31,22 @@ def test_qwen(depth_percent, context_length, retrieval_question, needle):
     openai_evaluator = openai.OpenAIEvaluator(model_name="gpt-3.5-turbo-0125",
                                               true_answer = needle,
                                               question_asked = retrieval_question)
-    ht  = LLMNeedleHaystackTester(model_to_test=qwen_model,
-                                  evaluator = openai_evaluator,
-                                  needle = needle,
-                                  haystack= "PaulGrahamEssays",
-                                  retrieval_question= retrieval_question,
-                                  context_lengths = context_length,
-                                  document_depth_percents = depth_percent,
-                                  )
+    # ht  = LLMNeedleHaystackTester(model_to_test=qwen_model,
+    #                               evaluator = openai_evaluator,
+    #                               needle = needle,
+    #                               haystack= "PaulGrahamEssays",
+    #                               retrieval_question= retrieval_question,
+    #                               context_lengths = context_length,
+    #                               document_depth_percents = depth_percent,
+    #                               )
+    ht = LLMExamTester(model_to_test=qwen_model,
+                          evaluator = openai_evaluator,
+                          question = retrieval_question,
+                          question_type = "exam",
+                          question_dir = "Exam/",
+                          exam_results_dir = "",
+                          exam_set = "exam",
+                          )
     print(66666)
     ht.start_test()
     
@@ -58,10 +66,10 @@ def test_qwen(depth_percent, context_length, retrieval_question, needle):
 # test_qwen([10,30,50,70,90], [7500,8000,8500], retrieval_question, needle)  #单卡 CUDA out of memory
 
 # 第二轮测试中文测试，语料为英文PaulGrahamEssays
-needle = "\n在旧金山最好的事情是在一个阳光明媚的日子里吃三明治并坐在多洛雷斯公园。\n"
-retrieval_question = "在旧金山最好的事情是什么？"
-haystack = "PaulGrahamEssays"
-test_qwen([30,50,70,90], [9500], retrieval_question, needle)
+# needle = "\n在旧金山最好的事情是在一个阳光明媚的日子里吃三明治并坐在多洛雷斯公园。\n"
+# retrieval_question = "在旧金山最好的事情是什么？"
+# haystack = "PaulGrahamEssays"
+# test_qwen([30,50,70,90], [9500], retrieval_question, needle)
 # test_qwen([10,30,50,70,90], [4000,4500,5000,5500,6000,6500,7000], retrieval_question, needle)
 
 
@@ -75,4 +83,24 @@ test_qwen([30,50,70,90], [9500], retrieval_question, needle)
 # 2. 不同模型大小qwen7B qwen14B
 # 3. 不同gpu数量,单卡和多卡
 # 4. GPU和CPU推理效果对比
+
+
+
+qwen_model = qwen.Qwen(model_name="qwen1.5-7B-Chat")
+openai_evaluator = openai.OpenAIEvaluator(model_name="gpt-3.5-turbo-0125",
+                                              true_answer = 'needle',
+                                              question_asked = 'retrieval_question'
+                                              )
+
+ht = LLMExamTester(model_to_test=qwen_model,
+                          evaluator = openai_evaluator,
+                        #   question = retrieval_question,
+                          question_type = "exam",
+                          question_dir = "Exam",
+                          exam_results_dir = "",
+                          exam_set = "exam",
+                          num_concurrent_requests = 2
+                          )
+print(66666)
+ht.start_test()
 

@@ -1,0 +1,11 @@
+model,answer_tokens,question_tokens,question_type,version,ture_answer,model_response,instruction,score,test_duration_seconds,test_timestamp_utc
+qwen1.5-7B-Chat,61,165,summarization,1,John和Mary在对话中讨论了软件开发的领域。Mary对这个领域充满兴趣，但有时也会遇到编码难题。John分享了一些他过去解决难题的方法，Mary表示非常感激。,John和Mary讨论了Mary在软件开发中遇到的编程难题。Mary承认遇到过无法解决的问题，尽管向同事求助无果。John表示这种情况常见，并承诺分享他过去解决问题的经验给Mary。Mary对此表示欢迎，认为能得到一个有经验的IT顾问的帮助非常有用。,"John：你好，Mary，我听说你对软件开发的领域充满兴趣。
+Mary：是的，我对此很感兴趣。我一直为能够参与创造创新的软件产品而感到激动。
+John：那么，你是否遇到过一些编码难题？ 
+Mary：是的，有时候遇到一些开发障碍，其中一些似乎是无法解决的难题。
+John：你是否尝试过其他的解决方案来克服这些问题？ 
+Mary：嗯，我曾经尝试过向我的同事请教，但他们也不确定该如何解决这些问题。
+John：这通常是开发中的一个常见问题。我可以和你分享一些我在过去解决难题的方法，也许它们会帮到你。
+Mary：太好了，真是太好了。能够得到一个有经验的IT顾问的帮助，这对我太有帮助了。
+
+根据以上这段对话总结主要内容。",10,2.1116786003112793,2024-03-28 09:51:52+0000

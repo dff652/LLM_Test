@@ -19,8 +19,8 @@ class OpenAIEvaluator(Evaluator):
     def __init__(self,
                  model_name: str = "gpt-3.5-turbo-0125",
                  model_kwargs: dict = DEFAULT_MODEL_KWARGS,
-                 true_answer: str = None,
-                 question_asked: str = None,):
+                 true_answer: str = '',
+                 question_asked: str = '',):
         """
         :param model_name: The name of the model.
         :param model_kwargs: Model configuration. Default is {temperature: 0}
@@ -63,6 +63,25 @@ class OpenAIEvaluator(Evaluator):
 
             # The question asked
             input=self.question_asked,
+        )
+
+        return int(eval_result['score'])
+
+    async def evaluate_response_async(self, 
+                                      response: str,
+                                      true_answer: str,
+                                      question_asked: str,
+                                      ) -> int:
+        evaluator = load_evaluator(
+            "labeled_score_string",
+            criteria=self.CRITERIA,
+            llm=self.evaluator,
+        )
+
+        eval_result = await evaluator.aevaluate_strings(
+            prediction = response,
+            reference = true_answer,
+            input = question_asked,
         )
 
         return int(eval_result['score'])
