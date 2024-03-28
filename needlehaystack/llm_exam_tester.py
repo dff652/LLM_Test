@@ -52,7 +52,7 @@ class LLMExamTester(LLMNeedleHaystackTester):
         
         # 任务开始前设置文件名，包括时间
         start_time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.context_file_location = f'{self.model_name.replace(".", "_")}_question_type_{self.question_type}_{start_time_str}'
+        self.context_file_location = f'{self.model_name.replace(".", "_")}_question_type_{self.question_type}_{start_time_str}_{self.frac}'
                 
     async def evaluate_and_log_async(self, question, question_type, ture_answer):
         """
