@@ -173,3 +173,5 @@ cython_debug/
 private_config.py
 
 old_files/
+eval_results/
+exam_results/
