@@ -88,32 +88,32 @@ def test_qwen(depth_percent, context_length, retrieval_question, needle):
 
 
 
-qwen_model = qwen.Qwen(model_name="qwen1.5-7B-Chat")
+# qwen_model = qwen.Qwen(model_name="qwen1.5-7B-Chat")
 
 
-ht = LLMExamTester(model_to_test=qwen_model,
-                          # evaluator = openai_evaluator,
-                        #   question = retrieval_question,
-                          question_type = "exam",
-                          question_dir = "Exam",
-                          exam_results_dir = "",
-                          exam_set = "exam",
-                          num_concurrent_requests = 50,
-                          frac = 1
-                          )
-print(66666)
-ht.start_test()
+# ht = LLMExamTester(model_to_test=qwen_model,
+#                           # evaluator = openai_evaluator,
+#                         #   question = retrieval_question,
+#                           question_type = "exam",
+#                           question_dir = "Exam",
+#                           exam_results_dir = "",
+#                           exam_set = "exam",
+#                           num_concurrent_requests = 50,
+#                           frac = 1
+#                           )
+# print(66666)
+# ht.start_test()
 
-# openai_evaluator = openai.OpenAIEvaluator(model_name="gpt-3.5-turbo-0125",
-#                                               true_answer = 'needle',
-#                                               question_asked = 'retrieval_question'
-#                                               )
+openai_evaluator = openai.OpenAIEvaluator(model_name="gpt-3.5-turbo-0125",
+                                              true_answer = 'needle',
+                                              question_asked = 'retrieval_question'
+                                              )
 
-# he = LLMEvaluator(evaluator = openai_evaluator,
-#                   num_concurrent_requests = 5
-#                   )
+he = LLMEvaluator(evaluator = openai_evaluator,
+                  num_concurrent_requests = 5
+                  )
 
-# print(777777)
-# he.start_eval()
+print(777777)
+he.start_eval()
                   
 

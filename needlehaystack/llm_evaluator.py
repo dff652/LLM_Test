@@ -59,11 +59,17 @@ class LLMEvaluator():
             row['eval_time'] = test_eval_time
     
     def scored_file_exists(self, test_file_name):
-        test_file_name_lower = test_file_name.lower()
+        # test_file_name_lower = test_file_name.lower()
         for filename in os.listdir(self.save_results_path):
-             if test_file_name_lower in filename:
-                print(f"Results already scored for {test_file_name}")
-                return True
+            if filename.endswith('.csv'):
+                print(f"filename: {filename}")
+                if test_file_name in filename:
+                    print(f"Results already scored for {test_file_name}")
+                    return True
+                else:
+                    print(f"Results not scored for {test_file_name}")
+            else:
+                continue
         return False
     
     async def run_eval_async(self):
@@ -79,6 +85,7 @@ class LLMEvaluator():
                 print(f"Processing {csv_file}")
                 # 为每个CSV文件处理评分
                 if csv_file.endswith('_perf.csv'):
+                    print(f"Skipping {csv_file}")
                     continue
                 
                 if self.scored_file_exists(file_name):
