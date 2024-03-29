@@ -171,3 +171,7 @@ cython_debug/
 
 # OpenAI API-key配置文件
 private_config.py
+
+old_files/
+eval_results/
+exam_results/

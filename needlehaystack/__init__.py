@@ -1,3 +1,4 @@
 from .llm_needle_haystack_tester import LLMNeedleHaystackTester
 from .llm_multi_needle_haystack_tester import LLMMultiNeedleHaystackTester
 from .llm_exam_tester import LLMExamTester
+from .llm_evaluator import LLMEvaluator

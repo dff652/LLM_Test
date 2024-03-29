@@ -1,0 +1,5 @@
+model,answer_tokens,question_tokens,question_type,version,true_answer,model_response,instruction,num_concurrent_requests,test_duration_seconds,test_timestamp_utc
+qwen1.5-7B-Chat,33,29,math,1,"1. 将问题转化为数学式子：铅笔的长度 = A4纸的长度 - 铅笔的宽度
+2. 将铅笔的宽度代入公式中：铅笔的长度 = 21厘米 - 11厘米
+3. 计算铅笔的长度：铅笔的长度 = 10厘米
+答案：这支铅笔的长度是10厘米。",一支铅笔的宽度如果比A4纸少11厘米，那么它的长度就是21厘米 - 11厘米 = 10厘米。,如果一支铅笔比一张A4纸的宽度（21厘米）少11厘米，那么这支铅笔是多长？,50,1.7904052734375,2024-03-29 15:27:03+0800
