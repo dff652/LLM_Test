@@ -1,0 +1,4 @@
+cpu_percent,memory_used_percent,disk_read_bytes,disk_write_bytes,net_sent_bytes,net_recv_bytes,gpu_0_load_change,gpu_0_free_memory_change,gpu_0_used_memory_change,gpu_0_temperature_change,gpu_1_load_change,gpu_1_free_memory_change,gpu_1_used_memory_change,gpu_1_temperature_change
+17.6,13.2,0,0,5797,5613,4.0,-142.0,142.0,0.0,-18.0,-170.0,170.0,2.0
+17.7,13.3,0,98304,5702,8198,35.0,-140.0,140.0,1.0,40.0,-180.0,180.0,3.0
+17.6,13.3,0,40960,15238,22945,0.0,-18.0,18.0,2.0,-1.0,-24.0,24.0,5.0

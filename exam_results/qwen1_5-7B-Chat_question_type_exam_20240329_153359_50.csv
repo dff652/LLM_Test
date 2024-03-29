@@ -1,0 +1,114 @@
+model,answer_tokens,question_tokens,question_type,version,true_answer,model_response,instruction,num_concurrent_requests,test_duration_seconds,test_timestamp_utc,frac
+qwen1.5-7B-Chat,10,29,math,1,"1. 将问题转化为数学式子：铅笔的长度 = A4纸的长度 - 铅笔的宽度
+2. 将铅笔的宽度代入公式中：铅笔的长度 = 21厘米 - 11厘米
+3. 计算铅笔的长度：铅笔的长度 = 10厘米
+答案：这支铅笔的长度是10厘米。",这支铅笔的长度是10厘米。,如果一支铅笔比一张A4纸的宽度（21厘米）少11厘米，那么这支铅笔是多长？,50,0.9390356540679932,2024-03-29 15:34:00+0800,0.05
+qwen1.5-7B-Chat,81,165,summarization,1,John和Mary在对话中讨论了软件开发的领域。Mary对这个领域充满兴趣，但有时也会遇到编码难题。John分享了一些他过去解决难题的方法，Mary表示非常感激。,John 和 Mary 讨论了 Mary 在软件开发中遇到的编程难题，Mary 表示在面对不确定的问题时寻求过同事的帮助但效果不佳。John 提供了他过去解决问题的方法，表示愿意分享他的经验以帮助 Mary。两人的交流表明 Mary 对提升自己的技能和解决问题有着积极的态度，并且 John 作为有经验的 IT 顾问愿意提供指导。,"John：你好，Mary，我听说你对软件开发的领域充满兴趣。
+Mary：是的，我对此很感兴趣。我一直为能够参与创造创新的软件产品而感到激动。
+John：那么，你是否遇到过一些编码难题？ 
+Mary：是的，有时候遇到一些开发障碍，其中一些似乎是无法解决的难题。
+John：你是否尝试过其他的解决方案来克服这些问题？ 
+Mary：嗯，我曾经尝试过向我的同事请教，但他们也不确定该如何解决这些问题。
+John：这通常是开发中的一个常见问题。我可以和你分享一些我在过去解决难题的方法，也许它们会帮到你。
+Mary：太好了，真是太好了。能够得到一个有经验的IT顾问的帮助，这对我太有帮助了。
+
+根据以上这段对话总结主要内容。",50,2.7675328254699707,2024-03-29 15:34:03+0800,0.05
+qwen1.5-7B-Chat,269,16,code,1,"以下是一个Python程序，可以输入一个数组，并输出该数组的中位数：
+
+```python
+def median(arr):
+    arr.sort()
+    n = len(arr)
+    if n % 2 == 0:
+        return (arr[n//2] + arr[n//2 - 1]) / 2
+    else:
+        return arr[n//2]
+
+# 测试
+arr = [1, 2, 3, 4, 5]
+print(median(arr)) # 输出 3
+
+arr = [1, 2, 3, 4, 5, 6]
+print(median(arr)) # 输出 3.5
+```
+
+这个程序中，我们首先定义了一个函数`median`，它接受一个数组`arr`作为参数。在函数内部，我们首先使用`sort`方法对数组进行排序，然后计算数组的长度`n`。如果`n`是偶数，则中位数是数组的中间两个数的平均值；如果`n`是奇数，则中位数就是数组中间的那个数。最后，我们返回中位数。
+
+在测试部分，我们输入了两个不同的数组，并分别调用了`median`函数，输出了中位数。","当然，以下是一个简单的Python程序，使用了`statistics`库来找到数组的中位数：
+
+```python
+import statistics
+
+def find_median(arr):
+    return statistics.median(arr)
+
+# 示例数组
+arr = [1, 2, 3, 4, 5]
+median = find_median(arr)
+print(""数组的中位数是："", median)
+```
+
+如果你需要自己手动处理数组以查找中位数（不使用外部库），可以使用以下方法（适用于非排序数组）：
+
+```python
+def find_medianManual(arr):
+    n = len(arr)
+    arr.sort()  # 先排序
+    if n % 2 == 0:  # 如果数组长度为偶数
+        mid = n // 2
+        median = (arr[mid - 1] + arr[mid]) / 2
+    else:  # 如果数组长度为奇数
+        mid = n // 2
+        median = arr[mid]
+    return median
+
+arr = [1, 2, 3, 4, 5]
+median = find_medianManual(arr)
+print(""数组的中位数是："", median)
+```
+
+请注意，这两个程序都假设你的数组至少包含一个元素。如果可能为空，你需要添加一些错误检查。",编写一个Python程序，输入一个数组，输出这个数组的中位数,50,8.794085025787354,2024-03-29 15:34:12+0800,0.05
+qwen1.5-7B-Chat,158,10,brainstorming,1,"1. 避免电器与水接触：厨房电器通常需要与水接触，如水槽、洗碗机等。在使用电器时，应确保电器与水没有直接接触，以免发生电击事故。
+
+2. 避免电器与湿湿的表面接触：厨房电器表面可能会沾湿，如烤箱、微波炉等。在使用电器时，应确保电器表面没有湿湿的水滴，以免电器表面发生短路。
+
+3. 避免电器与尖锐物品接触：厨房电器表面可能会有尖锐的边缘或角，如刀片、刀具等。在使用电器时，应确保电器表面没有尖锐物品，以免发生意外伤害。
+
+4. 避免电器与儿童接触：厨房电器通常需要高度的操作技能和专业知识，如烤箱、炉灶等。在使用电器时，应确保儿童无法接触到电器，以免发生意外伤害。
+
+5. 定期维护和保养电器：厨房电器需要定期维护和保养，如清洁电器表面、更换电器部件等。在使用电器时，应确保电器处于良好的工作状态，以免发生意外事故。","1. 保持接触干燥：许多厨房电器，如烤箱、电饭煲等，都有高温部分。使用后要及时擦干手，避免皮肤接触湿气引发触电。
+
+2. 安全插座：确保所有电器都连接到接地良好的插座，以防电压不稳导致漏电。
+
+3. 使用儿童锁：对于可能被孩子触及的电器，如微波炉和烤面包机，应设定儿童锁以防止误操作。
+
+4. 清洁保养：定期清洁电器的外部和内部，尤其是高温部位，避免积尘引发短路或过热。
+
+5. 遵循使用指南：每个电器都有自己的使用说明，务必按照指示操作，不要超负荷使用，以免损坏电器导致事故。",指出厨房电器与人体安全相关的五个注意事项。,50,5.181439638137817,2024-03-29 15:34:17+0800,0.05
+qwen1.5-7B-Chat,52,39,translation,1,"The sunlight shines on the purple smoke,
+And the distant waterfall hangs in the front.
+
+The water flows straight down for three thousand feet,
+It seems like the Milky Way falls from nine heavenly places.","Sunlight shines on the smoking cauldron, turning it purple with mist,
+From afar, a waterfall cascades like a cloth before the mountain stream.
+Falling at a thousand feet straight, it seems like stars have fallen from the Heavens nine.","```
+日照香炉生紫烟，遥看瀑布挂前川。
+
+飞流直下三千尺，疑是银河落九天。
+```
+
+把上面的诗词翻译成英文",50,1.7374138832092285,2024-03-29 15:34:19+0800,0.05
+qwen1.5-7B-Chat,36,57,extract,1,"公司名：未提及
+成立年份：1998年
+业务范畴：软件开发
+总部城市：纽约市","公司名：Our company
+成立年份：1998
+总部城市：纽约市
+业务范畴：软件开发，提供定制解决方案（适用于各类规模企业）","从下面的文章中提取公司的信息，包括公司名、成立年份、业务范畴、总部城市：
+Our company was established in 1998 and our headquarters are located in New York City. We specialize in software development and offer custom solutions for businesses of all sizes.",50,1.2264137268066406,2024-03-29 15:34:20+0800,0.05
+qwen1.5-7B-Chat,28,35,classification,1,"这个评论可以被视为正向的。原因如下：
+1. 描述了早餐很丰富、服务也热情。这表明了客户对酒店提供的早餐和服务感到满意，并给予了积极的评价。
+2. 评论中没有任何指责或批评的内容。客户似乎只在谈论他们在酒店住宿的经验，而不涉及任何具体问题。
+3. 最后一句话“退房时，前台值此人员办理手续也非常快”进一步证实了客户对酒店工作效率的好评。
+综合来看，这个评论可以认为是正向的。",这个评论是正向的。评价中提到了早餐丰富、服务热情以及前台人员办理手续速度快，这些都是积极的反馈。,"判断下面的评论是正向还是负向：
+早餐很丰富，服务也热情，早上很早退房时，前台值此人员办理手续也非常快。",50,0.9579260349273682,2024-03-29 15:34:21+0800,0.05
