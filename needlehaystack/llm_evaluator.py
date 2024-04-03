@@ -19,13 +19,16 @@ class LLMEvaluator():
                  read_results_path: str = None,
                  save_results_path: str = None,
                  print_ongoing_status = True,
-                 num_concurrent_requests = 1
+                 num_concurrent_requests = 1,
+                 frac = 1
                  ):
         self.evaluation_model = evaluator  
         self.print_ongoing_status = print_ongoing_status
         self.num_concurrent_requests = num_concurrent_requests
-        self.eval_results_file_path = read_results_path
+        self.read_results_path = read_results_path
+        self.save_results_path = save_results_path
         self.model_name = self.evaluation_model.model_name
+        self.frac = frac
         
         
         start_time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -42,27 +45,32 @@ class LLMEvaluator():
     
     async def score_answer(self,response, true_answer, question):
         score = await self.evaluation_model.evaluate_response_async(response, true_answer, question)
-        return score
+        return score['reasoning'], int(score['score'])
     
-    async def evaluate_scores_and_update(self, sem, row):
+    async def evaluate_scores_and_update(self, sem, index, row, df):
         async with sem:
             test_start_time = time.time()
             model_response = row['model_response']
             true_answer = row['true_answer']
             question = row['instruction']
-            score = await self.score_answer(model_response, true_answer, question)
+            reasoning, score = await self.score_answer(model_response, true_answer, question)
             
             test_end_time = time.time()
             test_eval_time = test_end_time - test_start_time
             print(f"test_eval_time: {test_eval_time}")
-            row['score'] = score
-            row['eval_time'] = test_eval_time
+            print(f"score: {score}")
+            # row['score'] = score
+            # row['eval_time'] = test_eval_time
+            
+            df.at[index, 'score'] = score
+            df.at[index, 'eval_time'] = test_eval_time
+            df.at[index, 'reasoning'] = reasoning
     
     def scored_file_exists(self, test_file_name):
         # test_file_name_lower = test_file_name.lower()
         for filename in os.listdir(self.save_results_path):
             if filename.endswith('.csv'):
-                print(f"filename: {filename}")
+                # print(f"filename: {filename}")
                 if test_file_name in filename:
                     print(f"Results already scored for {test_file_name}")
                     return True
@@ -92,25 +100,27 @@ class LLMEvaluator():
                     print(f"Results already scored for {csv_file}")
                     continue
                 
-                df = pd.read_csv(csv_file)
+                df_sampled = pd.read_csv(csv_file).sample(frac=self.frac, random_state=1).reset_index(drop=True)
                 # 定义每个CSV文件的保存路径
+                # df_sampled = df.sample(frac=self.frac, random_state=1)
                 
-                
-                tasks = [asyncio.create_task(self.evaluate_scores_and_update(sem, row)) for index, row in df.iterrows()]
+                tasks = [asyncio.create_task(self.evaluate_scores_and_update(sem, row)) for index, row in df_sampled.iterrows()]
                 await asyncio.gather(*tasks)
                 
                 save_results_file_path = os.path.join(self.save_results_path, f'{self.context_file_location}_{file_name}')
-                df.to_csv(save_results_file_path, index=False)
+                df_sampled.to_csv(save_results_file_path, index=False, encoding='utf-8')
                 print(f"Results saved to {save_results_file_path}")
                         
                 
         elif os.path.isfile(self.read_results_path):
             # 如果是单个文件，和之前的逻辑一样
-            df = pd.read_csv(self.read_results_path)
-            tasks = [asyncio.create_task(self.evaluate_scores_and_update(sem, row)) for index, row in df.iterrows()]
+            df_sampled = pd.read_csv(self.read_results_path).sample(frac=self.frac, random_state=1).reset_index(drop=True)
+            # df_sampled = df.sample(frac=self.frac, random_state=1)
+            tasks = [asyncio.create_task(self.evaluate_scores_and_update(sem, index,row, df_sampled)) for index, row in df_sampled.iterrows()]
             await asyncio.gather(*tasks)
+            
             save_results_file_path = os.path.join(self.save_results_path, f'{self.context_file_location}.csv') 
-            df.to_csv(save_results_file_path, index=False)
+            df_sampled.to_csv(save_results_file_path, index=False, encoding='utf-8')
             print(f"Results saved to {save_results_file_path}")
         else:
             print("Provided read_results_path is not valid.")

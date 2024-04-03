@@ -99,7 +99,7 @@ class Qwen(ModelProvider):
         \n ------- \n 
         {context} 
         \n ------- \n
-        Here is the user question: \n --- --- --- \n {question} \n Don't give information outside the document or repeat your findings."""
+        Here is the user question: \n --- --- --- \n {question} \n Give an correct answer and specific explanation ."""
         
         prompt = PromptTemplate(
             template=template,
@@ -133,7 +133,7 @@ class Qwen(ModelProvider):
             },
             {
                 "role": "user",
-                "content": f"{retrieval_question} Don't give fake information or repeat your findings"
+                "content": f"{retrieval_question} Give an correct answer and specific explanation"
             }]
         
         

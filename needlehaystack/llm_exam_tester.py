@@ -32,7 +32,7 @@ class LLMExamTester(LLMNeedleHaystackTester):
                  evaluator: Evaluator = None,
                  question = None, 
                  question_type = "exam",
-                 question_dir = "/Exam",
+                 question_path = "/Exam",
                  exam_results_dir = "",
                  exam_set = "exam",
                  print_ongoing_status = True,
@@ -45,7 +45,7 @@ class LLMExamTester(LLMNeedleHaystackTester):
         self.evaluation_model = evaluator
         self.model_to_test = model_to_test
         self.question = question
-        self.question_dir = question_dir
+        self.question_path = question_path
         self.exam_results_dir = exam_results_dir
         self.question_type = question_type
         self.exam_set = exam_set
@@ -65,32 +65,32 @@ class LLMExamTester(LLMNeedleHaystackTester):
         self.results_dir = os.path.join(parent_dir, 'exam_results/')
         # self.results_file_path =  os.path.join(self.results_dir, f'{self.context_file_location}.csv')
         
-    async def score_answer(self,response, true_answer, question):
-        score = await self.evaluation_model.evaluate_response_async(response, true_answer, question)
-        return score
+    # async def score_answer(self,response, true_answer, question):
+    #     score = await self.evaluation_model.evaluate_response_async(response, true_answer, question)
+    #     return score
     
-    async def evaluate_scores_and_update(self):
-        results_file_path =  os.path.join(self.results_dir, f'{self.context_file_location}.csv')
-        results_df = pd.read_csv(results_file_path)
-        scores = [] # 用于存储所有的分数
+    # async def evaluate_scores_and_update(self):
+    #     results_file_path =  os.path.join(self.results_dir, f'{self.context_file_location}.csv')
+    #     results_df = pd.read_csv(results_file_path)
+    #     scores = [] # 用于存储所有的分数
 
-        for index, row in results_df.iterrows():
-            model_response = row['model_response']
-            true_answer = row['true_answer']
-            question = row['instruction']
-            test_start_time = time.time()
-            score = await self.score_answer(model_response, true_answer, question) # 计算分数
-            test_end_time = time.time()
-            test_eval_time = test_end_time - test_start_time
-            print(f"test_eval_time: {test_eval_time}")
-            scores.append(score)
+    #     for index, row in results_df.iterrows():
+    #         model_response = row['model_response']
+    #         true_answer = row['true_answer']
+    #         question = row['instruction']
+    #         test_start_time = time.time()
+    #         score = await self.score_answer(model_response, true_answer, question) # 计算分数
+    #         test_end_time = time.time()
+    #         test_eval_time = test_end_time - test_start_time
+    #         print(f"test_eval_time: {test_eval_time}")
+    #         scores.append(score)
     
-        # 将分数作为新的一列添加到DataFrame中
-        results_df['score'] = scores
+    #     # 将分数作为新的一列添加到DataFrame中
+    #     results_df['score'] = scores
         
-        # 将更新后的DataFrame保存回CSV文件
-        # updated_csv_file_path = 'exam_results_with_scores.csv'
-        results_df.to_csv(results_file_path, index=False)
+    #     # 将更新后的DataFrame保存回CSV文件
+    #     # updated_csv_file_path = 'exam_results_with_scores.csv'
+    #     results_df.to_csv(results_file_path, index=False)
     
     def get_system_and_gpu_metrics(self):
         # 获取CPU和内存等系统指标
@@ -150,7 +150,7 @@ class LLMExamTester(LLMNeedleHaystackTester):
         return differences
 
                 
-    async def evaluate_and_log_async(self, question, question_type, true_answer):
+    async def evaluate_and_log_async(self, question, question_type, true_answer, question_num):
         """
         不需要context直接让模型回答问题再评估
         """
@@ -196,6 +196,7 @@ class LLMExamTester(LLMNeedleHaystackTester):
             'test_duration_seconds' : test_elapsed_time,
             'test_timestamp_utc' : datetime.now(beijing_timezone).strftime('%Y-%m-%d %H:%M:%S%z'),
             'frac' : self.frac,
+            'question_num' : question_num,
             }
         
         
@@ -231,12 +232,12 @@ class LLMExamTester(LLMNeedleHaystackTester):
             
         
             if os.path.isfile(results_file_path):
-                df.to_csv(results_file_path, mode='a', header=False, index=False)
+                df.to_csv(results_file_path, mode='a', header=False, index=False, encoding='utf-8')
                 print("New record added.")
                 
             else:
                 # if not df_existing.append(df, ignore_index=True).duplicated().any():
-                df.to_csv(results_file_path, mode='w', index=False)
+                df.to_csv(results_file_path, mode='w', index=False,  encoding='utf-8')
             
     
             print(f"Results saved to {results_file_path}")
@@ -249,10 +250,10 @@ class LLMExamTester(LLMNeedleHaystackTester):
             df_perf = pd.DataFrame([metric_differences])
             
             if os.path.isfile(perf_results_file_path):
-                df_perf.to_csv(perf_results_file_path, mode='a', header=False, index=False)
+                df_perf.to_csv(perf_results_file_path, mode='a', header=False, index=False, encoding='utf-8')
                 print("Performance record added.")
             else:
-                df_perf.to_csv(perf_results_file_path, mode='w', index=False)
+                df_perf.to_csv(perf_results_file_path, mode='w', index=False,  encoding='utf-8')
                 print("Performance results file created.")
     
             print(f"Performance results saved to {perf_results_file_path}")
@@ -305,28 +306,57 @@ class LLMExamTester(LLMNeedleHaystackTester):
 
         base_dir = os.path.abspath(os.path.dirname(__file__))
         tasks = []
-        for question_file in glob.glob(os.path.join(base_dir, self.question_dir,'*')):
-            
-            if question_file.endswith(".xlsx"):
-                df_questions = pd.read_excel(question_file)
-                questions = df_questions['instruction']
-            elif question_file.endswith(".json"):
-                with open(question_file, 'r') as f:
-                    questions = json.load(f)
+        if os.path.isdir(self.question_path):
+            for question_file in glob.glob(os.path.join(base_dir, self.question_path,'*')):
+                
+                if question_file.endswith(".xlsx"):
+                    df_questions = pd.read_excel(question_file)
+                    questions = df_questions['instruction']
+                elif question_file.endswith(".json"):
+                    with open(question_file, 'r') as f:
+                        questions = json.load(f)
+                else:
+                    print(f"Skipping file {question_file}")
+                    continue
+                
+                df_sampled = df_questions.sample(frac=self.frac, random_state=1)
+                print(df_sampled.shape)
+                for i in df_sampled.index:
+                    question = df_sampled['instruction'][i]
+                    question_type = df_sampled['kind'][i]
+                    true_answer = df_sampled['reference'][i]
+                    quesiton_num = df_sampled['num'][i]
+                    
+                    task = self.bound_evaluate_and_log_async(sem, question, question_type, true_answer, quesiton_num)
+                    tasks.append(task)
+                    
+        elif os.path.isfile(self.question_path):
+            if self.question_path.endswith(".xlsx"):
+                df_questions = pd.read_excel(self.question_path)
+            elif self.question_path.endswith(".json"):
+                with open(self.question_path, 'r') as f:
+                    df_questions = pd.DataFrame(json.load(f))
             else:
-                print(f"Skipping file {question_file}")
-                continue
+                print(f"Skipping file {self.question_path}")
+                return
             
-            # 随机抽取一部分数据，这里以抽取25%为例
             df_sampled = df_questions.sample(frac=self.frac, random_state=1)
             print(df_sampled.shape)
             for i in df_sampled.index:
-                self.question = df_sampled['instruction'][i]
-                self.question_type = df_sampled['kind'][i]
-                self.true_answer = df_sampled['参考'][i]
+                question = df_sampled['instruction'][i]
+                question_type = df_sampled['kind'][i]
+                true_answer = df_sampled['reference'][i]
+                quesiton_num = df_sampled['num'][i]
                 
-                task = self.bound_evaluate_and_log_async(sem, self.question, self.question_type, self.true_answer)
+                task = self.bound_evaluate_and_log_async(sem, question, question_type, true_answer, quesiton_num)
                 tasks.append(task)
+                    
+        else:
+            print(f"Invalid question path {self.question_path}")
+            
+            
+            # 随机抽取一部分数据，这里以抽取25%为例
+            
         
         
         # Wait for all tasks to complete

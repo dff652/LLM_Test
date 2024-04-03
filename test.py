@@ -1,6 +1,6 @@
 from needlehaystack import LLMNeedleHaystackTester, LLMExamTester, LLMEvaluator
 from needlehaystack.providers import qwen
-from needlehaystack.evaluators import openai
+from needlehaystack.evaluators import openai, qwen_eval
 import tqdm
 import numpy as np
 
@@ -43,7 +43,7 @@ def test_qwen(depth_percent, context_length, retrieval_question, needle):
                           evaluator = openai_evaluator,
                           question = retrieval_question,
                           question_type = "exam",
-                          question_dir = "Exam/",
+                          question_path = "Exam/",
                           exam_results_dir = "",
                           exam_set = "exam",
                           frac =1,
@@ -90,12 +90,12 @@ def test_qwen(depth_percent, context_length, retrieval_question, needle):
 
 # qwen_model = qwen.Qwen(model_name="qwen1.5-7B-Chat")
 
-
+# exam_path = '/home/dff652/benchmarks/LLM_Test/needlehaystack/Exam/test_0.4_en.xlsx'
 # ht = LLMExamTester(model_to_test=qwen_model,
 #                           # evaluator = openai_evaluator,
 #                         #   question = retrieval_question,
 #                           question_type = "exam",
-#                           question_dir = "Exam",
+#                           question_path = exam_path,
 #                           exam_results_dir = "",
 #                           exam_set = "exam",
 #                           num_concurrent_requests = 50,
@@ -104,13 +104,16 @@ def test_qwen(depth_percent, context_length, retrieval_question, needle):
 # print(66666)
 # ht.start_test()
 
-openai_evaluator = openai.OpenAIEvaluator(model_name="gpt-3.5-turbo-0125",
-                                              true_answer = 'needle',
-                                              question_asked = 'retrieval_question'
-                                              )
-
-he = LLMEvaluator(evaluator = openai_evaluator,
-                  num_concurrent_requests = 5
+# openai_evaluator = openai.OpenAIEvaluator(model_name="gpt-3.5-turbo-0125",
+#                                               true_answer = 'needle',
+#                                               question_asked = 'retrieval_question'
+#                                               )
+qwen_evaluator = qwen_eval.QwenEvaluator(model_name="qwen1.5-7B-Chat")
+exam_path = '/home/dff652/benchmarks/LLM_Test/exam_results/qwen1_5-7B-Chat_question_type_exam_20240403_152440_50.csv'
+he = LLMEvaluator(evaluator = qwen_evaluator,
+                  read_results_path = exam_path,
+                  num_concurrent_requests = 1,
+                  frac = 1
                   )
 
 print(777777)

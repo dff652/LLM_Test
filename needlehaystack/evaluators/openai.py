@@ -5,16 +5,17 @@ from .evaluator import Evaluator
 from langchain.evaluation import load_evaluator
 from langchain_community.chat_models import ChatOpenAI
 from ..config.private_config import OPENAI_API_KEY
+from ..config.criteria import CRITERIA_NEEDLEHAYSTACK, CRITERIA_EXAM
 
 class OpenAIEvaluator(Evaluator):
     DEFAULT_MODEL_KWARGS: dict = dict(temperature=0)
-    CRITERIA = {"accuracy": """
-                Score 1: The answer is completely unrelated to the reference.
-                Score 3: The answer has minor relevance but does not align with the reference.
-                Score 5: The answer has moderate relevance but contains inaccuracies.
-                Score 7: The answer aligns with the reference but has minor omissions.
-                Score 10: The answer is completely accurate and aligns perfectly with the reference.
-                Only respond with a numberical score"""}
+    # CRITERIA = {"accuracy": """
+    #             Score 1: The answer is completely unrelated to the reference.
+    #             Score 3: The answer has minor relevance but does not align with the reference.
+    #             Score 5: The answer has moderate relevance but contains inaccuracies.
+    #             Score 7: The answer aligns with the reference but has minor omissions.
+    #             Score 10: The answer is completely accurate and aligns perfectly with the reference.
+    #             Only respond with a numberical score"""}
 
     def __init__(self,
                  model_name: str = "gpt-3.5-turbo-0125",
@@ -35,6 +36,7 @@ class OpenAIEvaluator(Evaluator):
         self.model_kwargs = model_kwargs
         self.true_answer = true_answer
         self.question_asked = question_asked
+        self.CRITERIA = CRITERIA_EXAM
 
         # api_key = os.getenv('NIAH_EVALUATOR_API_KEY')
         api_key = OPENAI_API_KEY
@@ -84,4 +86,5 @@ class OpenAIEvaluator(Evaluator):
             input = question_asked,
         )
 
-        return int(eval_result['score'])
+        # return int(eval_result['score'])
+        return eval_result
