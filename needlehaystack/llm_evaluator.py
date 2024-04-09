@@ -44,8 +44,10 @@ class LLMEvaluator():
         
     
     async def score_answer(self,response, true_answer, question):
-        score = await self.evaluation_model.evaluate_response_async(response, true_answer, question)
-        return score['reasoning'], int(score['score'])
+        # score = await self.evaluation_model.evaluate_response_async(response, true_answer, question)
+        # return score['reasoning'], score['score']
+        eval_result = await self.evaluation_model.evaluate_response_async(response, true_answer, question)
+        return  eval_result
     
     async def evaluate_scores_and_update(self, sem, index, row, df):
         async with sem:
@@ -53,8 +55,29 @@ class LLMEvaluator():
             model_response = row['model_response']
             true_answer = row['true_answer']
             question = row['instruction']
-            reasoning, score = await self.score_answer(model_response, true_answer, question)
             
+            # reasoning, score = await self.score_answer(model_response, true_answer, question)
+            markdown_text = await self.score_answer(model_response, true_answer, question)
+            
+            
+            print('*'*50)
+            print('question num:', row['question_num'])
+            try:
+                start = markdown_text.find('json') + len('json\n')
+                end = markdown_text.rfind('```')
+                eval_result = markdown_text[start:end].strip()
+                
+                eval_result = json.loads(eval_result)
+                reasoning = eval_result['reasoning']
+                score = eval_result['score']
+            except Exception as e:
+                print('markdown_text:', markdown_text)
+                print('Error :', e)
+                # eval_result = json.loads(markdown_text)
+                # print('eval_result:', eval_result)
+                reasoning = "Error decoding json"
+                score = -1
+                
             test_end_time = time.time()
             test_eval_time = test_end_time - test_start_time
             print(f"test_eval_time: {test_eval_time}")
@@ -62,9 +85,11 @@ class LLMEvaluator():
             # row['score'] = score
             # row['eval_time'] = test_eval_time
             
-            df.at[index, 'score'] = score
-            df.at[index, 'eval_time'] = test_eval_time
-            df.at[index, 'reasoning'] = reasoning
+            df.loc[index, 'eval_result'] = markdown_text
+            df.loc[index, 'score'] = score
+            df.loc[index, 'eval_time'] = test_eval_time
+            df.loc[index, 'reasoning'] = reasoning
+            df.loc[index, 'eval_model'] = self.model_name
     
     def scored_file_exists(self, test_file_name):
         # test_file_name_lower = test_file_name.lower()

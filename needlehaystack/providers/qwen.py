@@ -18,6 +18,10 @@ from accelerate import init_empty_weights, infer_auto_device_map, load_checkpoin
 model_dict ={
     "qwen1.5-7B-Chat": "/home/dff652/llm_models/qwen/Qwen1___5-7B-Chat/",
     "qwen1.5-14B": "/home/dff652/llm_models/qwen/Qwen1___5-14B/",
+    "qwen1.5-MoE-A2.7B-Chat": "/home/dff652/llm_models/qwen/Qwen1___5-MoE-A2___7B-Chat/",
+    "qwen1.5-32B-Chat": "/home/dff652/llm_models/qwen/Qwen1___5-32B-Chat/",
+    "qwen1.5-32B-Chat-AWQ": "/home/dff652/llm_models/qwen/Qwen1___5-32B-Chat-AWQ/",
+    "qwen1.5-14B-Chat": "/home/dff652/llm_models/qwen/Qwen1___5-14B-Chat/",
 }
 
 # os.environ["CUDA_VISIBLE_DEVICES"]="0，1"
@@ -26,9 +30,10 @@ device_map = 'auto'
 device = "cuda"
 # device_gpu = "cuda:0"
 # device_cpu = "cpu"
-
+torch_dtype = torch.float16
+# torch_dtype = 'auto'
 class Qwen(ModelProvider):
-    DEFAULT_MODEL_KWARGS: dict = dict(max_tokens  = 1024,
+    DEFAULT_MODEL_KWARGS: dict = dict(max_tokens  = 512,
                                       temperature = 0)
 
     def __init__(self,
@@ -44,10 +49,14 @@ class Qwen(ModelProvider):
         self.api_key = None
         model_path = model_dict[model_name]
         
+        if model_name == 'qwen1.5-MoE-A2.7B-Chat':
+            from modelscope import AutoModelForCausalLM, AutoTokenizer
+        else:
+            from transformers import AutoTokenizer, AutoModelForCausalLM, TextStreamer
         
         self.model = AutoModelForCausalLM.from_pretrained(model_path,
                                                           device_map=device_map,
-                                                          torch_dtype=torch.float16)
+                                                          torch_dtype=torch_dtype)
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         
     async def evaluate_model(self, prompt: str) -> str:

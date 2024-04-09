@@ -47,27 +47,67 @@ CRITERIA_NEEDLEHAYSTACK = {"accuracy": """
 #         Score 5: Correct-Discordant, The answer is correct but does not fully align with the expected or common understanding, indicating a correct but potentially less common or less expected approach.    
 #         Score 3: Incorrect-Concordant, The answer is incorrect, but the manner of the mistake is consistent with a common misunderstanding, showing a widespread but incorrect understanding.   
 #         Score 1: Incorrect-Discordant, The answer is both incorrect and inconsistent with common misunderstandings, indicating a unique but incorrect interpretation.
-        
-#         respond with a numerical score and comments.
+#         respond with a numerical score and reasoning 
+#     """
+# }
+
+# CRITERIA_EXAM = {
+#     "evaluation_criteria": """
+#         score options: 0, 0.5, 1, Dont out of options
+#         Score 1: Correct-Concordant, The answer is not only correct but also consistent with the expected or common understanding, representing the ideal response.     
+#         Score 0.5: Correct-Discordant, The answer is correct but does not fully align with the expected or common understanding, indicating a correct but potentially less common or less expected approach.    
+#         Score 0: Incorrect-Concordant, The answer is incorrect, but the manner of the mistake is consistent with a common misunderstanding, showing a widespread but incorrect understanding.   
+#         Score 0: Incorrect-Discordant, The answer is both incorrect and inconsistent with common misunderstandings, indicating a unique but incorrect interpretation.
+#         respond with a numerical score and reasoning 
 #     """
 # }
 
 CRITERIA_EXAM = {
     "evaluation_criteria": """
-        Score 10: Perfectly Correct-Concordant - The response is not only accurate but also perfectly aligns with the expected or common understanding, demonstrating an ideal and exemplary understanding of the subject.
-
-        Score 8: Mostly Correct-Concordant - The response is correct and mostly aligns with the common understanding, though it may include minor inaccuracies or less common interpretations that do not significantly detract from its overall quality.
-
-        Score 5: Correct-Discordant - While accurate, the response deviates from the expected or common understanding, suggesting a correct but unconventional approach or interpretation.
-
-        Score 4: Partially Incorrect-Concordant - The response contains significant inaccuracies, yet these inaccuracies reflect common misunderstandings or misconceptions, indicating a flawed but understandable approach.
-
-        Score 2: Incorrect-Concordant - The response is incorrect, and the nature of the error aligns with widespread but incorrect understandings, revealing a common but incorrect perspective.
-
-        Score 1: Completely Incorrect-Discordant - The response is both incorrect and uniquely misguided, showing an unusual and incorrect interpretation far removed from common understanding or misconceptions.
-
-        Rating must contain a doubel bracket string!
-        Please respond with a numerical score based on the above criteria, followed by comments elaborating on the reasoning behind the chosen score.
+        score options: 0,  1, Dont out of options
+        Score 1: Correct, The chosen option is  correct .     
+        Score 0: Incorrect, The chosen option is incorrect.   
+        respond with a numerical score and reasoning 
     """
 }
+
+# CRITERIA_EXAM = {
+#     "evaluation_criteria": """
+#         Please provide your response in JSON format, using double quotes for keys and string values. Avoid using unescaped double quotes within strings. Each response should be a dictionary with 'score' and 'reasoning' as keys. See the example below for the correct format.
+        
+#         Example:
+#         {
+#             "score": 10,
+#             "reasoning": "The answer is not only correct but also consistent with the expected or common understanding, representing the ideal response."
+#         }
+        
+#         Evaluation Criteria:
+#         Score 10: Correct-Concordant - The answer is not only correct but also consistent with the expected or common understanding, representing the ideal response.     
+#         Score 5: Correct-Discordant - The answer is correct but does not fully align with the expected or common understanding, indicating a correct but potentially less common or less expected approach.    
+#         Score 3: Incorrect-Concordant - The answer is incorrect, but the manner of the mistake is consistent with a common misunderstanding, showing a widespread but incorrect understanding.   
+#         Score 1: Incorrect-Discordant - The answer is both incorrect and inconsistent with common misunderstandings, indicating a unique but incorrect interpretation.
+        
+#         Please respond with a numerical score and reasoning in dict form. Keys must be enclosed in double quotes as per JSON format requirements.
+#     """
+# }
+
+
+# CRITERIA_EXAM = {
+#     "evaluation_criteria": """
+#         Score 10: Perfectly Correct-Concordant - The response is not only accurate but also perfectly aligns with the expected or common understanding, demonstrating an ideal and exemplary understanding of the subject.
+
+#         Score 8: Mostly Correct-Concordant - The response is correct and mostly aligns with the common understanding, though it may include minor inaccuracies or less common interpretations that do not significantly detract from its overall quality.
+
+#         Score 5: Correct-Discordant - While accurate, the response deviates from the expected or common understanding, suggesting a correct but unconventional approach or interpretation.
+
+#         Score 4: Partially Incorrect-Concordant - The response contains significant inaccuracies, yet these inaccuracies reflect common misunderstandings or misconceptions, indicating a flawed but understandable approach.
+
+#         Score 2: Incorrect-Concordant - The response is incorrect, and the nature of the error aligns with widespread but incorrect understandings, revealing a common but incorrect perspective.
+
+#         Score 1: Completely Incorrect-Discordant - The response is both incorrect and uniquely misguided, showing an unusual and incorrect interpretation far removed from common understanding or misconceptions.
+
+#         Rating must contain a doubel bracket string!
+#         Please respond with a numerical score based on the above criteria, followed by comments elaborating on the reasoning behind the chosen score.
+#     """
+# }
 
