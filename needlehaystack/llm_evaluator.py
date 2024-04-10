@@ -12,6 +12,7 @@ from .providers import ModelProvider
 from concurrent.futures import ProcessPoolExecutor
 from asyncio import Semaphore
 from datetime import datetime, timezone
+from .utils import LanguageDetector
 
 class LLMEvaluator():
     def __init__(self,
@@ -30,9 +31,17 @@ class LLMEvaluator():
         self.model_name = self.evaluation_model.model_name
         self.frac = frac
         
+        ld = LanguageDetector()
+        if self.read_results_path.endswith(".xlsx"):
+            df = pd.read_excel(self.read_results_path)
+        elif self.read_results_path.endswith(".csv"):
+            df = pd.read_csv(self.read_results_path)
+            
+        text = df['instruction'][0]
+        context_language = ld.language_detection(text)
         
         start_time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.context_file_location = f'{self.model_name.replace(".", "_")}_st_{start_time_str}'
+        self.context_file_location = f'{self.model_name.replace(".", "_")}_st_{start_time_str}_{context_language}'
         
         base_dir = os.path.abspath(os.path.dirname(__file__))
         parent_dir = os.path.abspath(os.path.join(base_dir, os.pardir))
@@ -63,9 +72,8 @@ class LLMEvaluator():
             print('*'*50)
             print('question num:', row['question_num'])
             try:
-                start = markdown_text.find('json') + len('json\n')
-                end = markdown_text.rfind('```')
-                eval_result = markdown_text[start:end].strip()
+                
+                eval_result = LanguageDetector.markdown_to_json(markdown_text)
                 
                 eval_result = json.loads(eval_result)
                 reasoning = eval_result['reasoning']

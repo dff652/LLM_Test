@@ -19,6 +19,8 @@ from zoneinfo import ZoneInfo
 import psutil
 import GPUtil
 
+from .utils import LanguageDetector, SystemInfo
+
 # 设置为北京时区
 beijing_timezone = ZoneInfo("Asia/Shanghai")
 
@@ -57,9 +59,16 @@ class LLMExamTester(LLMNeedleHaystackTester):
         self.results_version = results_version
         self.testing_results = []
         
+        ld = LanguageDetector()
+        if self.question_path.endswith(".xlsx"):
+            df = pd.read_excel(self.question_path)
+        elif self.question_path.endswith(".csv"):
+            df = pd.read_csv(self.question_path)
+        text = df['instruction'][0]
+        context_language = ld.language_detection(text)
         # 任务开始前设置文件名，包括时间
         start_time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.context_file_location = f'{self.model_name.replace(".", "_")}_question_type_{self.question_type}_{start_time_str}_{self.num_concurrent_requests}'
+        self.context_file_location = f'{self.model_name.replace(".", "_")}_question_type_{self.question_type}_{start_time_str}_{self.num_concurrent_requests}_{context_language}'
         base_dir = os.path.abspath(os.path.dirname(__file__))
         parent_dir = os.path.abspath(os.path.join(base_dir, os.pardir))
         self.results_dir = os.path.join(parent_dir, 'exam_results/')
@@ -92,68 +101,81 @@ class LLMExamTester(LLMNeedleHaystackTester):
     #     # updated_csv_file_path = 'exam_results_with_scores.csv'
     #     results_df.to_csv(results_file_path, index=False)
     
-    def get_system_and_gpu_metrics(self):
-        # 获取CPU和内存等系统指标
-        cpu_percent = psutil.cpu_percent()
-        memory = psutil.virtual_memory()
-        disk_io = psutil.disk_io_counters()
-        net_io = psutil.net_io_counters()
-        system_metrics = {
-            'cpu_percent': cpu_percent,
-            'memory_used_percent': memory.percent,
-            'disk_read_bytes': disk_io.read_bytes,
-            'disk_write_bytes': disk_io.write_bytes,
-            'net_sent_bytes': net_io.bytes_sent,
-            'net_recv_bytes': net_io.bytes_recv,
-        }
+    
+    
+    # def get_system_and_gpu_metrics(self):
+    #     # 获取CPU和内存等系统指标
+    #     cpu_percent = psutil.cpu_percent()
+    #     memory = psutil.virtual_memory()
+    #     disk_io = psutil.disk_io_counters()
+    #     net_io = psutil.net_io_counters()
+    #     system_metrics = {
+    #         'cpu_percent': cpu_percent,
+    #         'memory_used_percent': memory.percent,
+    #         'disk_read_bytes': disk_io.read_bytes,
+    #         'disk_write_bytes': disk_io.write_bytes,
+    #         'net_sent_bytes': net_io.bytes_sent,
+    #         'net_recv_bytes': net_io.bytes_recv,
+    #     }
 
-        # 获取GPU指标
-        gpu_metrics = []
-        gpus = GPUtil.getGPUs()
-        for gpu in gpus:
-            gpu_metrics.append({
-                'gpu_id': gpu.id,
-                'gpu_name': gpu.name,
-                'gpu_load': gpu.load * 100,  # 转换为百分比
-                'gpu_free_memory': gpu.memoryFree,
-                'gpu_used_memory': gpu.memoryUsed,
-                'gpu_total_memory': gpu.memoryTotal,
-                'gpu_temperature': gpu.temperature,
-            })
+    #     # 获取GPU指标
+    #     gpu_metrics = []
+    #     gpus = GPUtil.getGPUs()
+    #     for gpu in gpus:
+    #         gpu_metrics.append({
+    #             'gpu_id': gpu.id,
+    #             'gpu_name': gpu.name,
+    #             'gpu_load': gpu.load * 100,  # 转换为百分比
+    #             'gpu_free_memory': gpu.memoryFree,
+    #             'gpu_used_memory': gpu.memoryUsed,
+    #             'gpu_total_memory': gpu.memoryTotal,
+    #             'gpu_temperature': gpu.temperature,
+    #         })
 
-        # 将GPU指标整合到系统指标中
-        system_metrics['gpu_metrics'] = gpu_metrics
+    #     # 将GPU指标整合到系统指标中
+    #     system_metrics['gpu_metrics'] = gpu_metrics
 
-        return system_metrics  
+    #     return system_metrics  
         
-    def calculate_metric_differences(self,start_metrics, end_metrics):
-        differences = {}
-        for key in start_metrics:
-            if key == 'gpu_metrics':
-                # 处理GPU指标差异
-                start_gpus = start_metrics[key]
-                end_gpus = end_metrics[key]
-                for i, (start_gpu, end_gpu) in enumerate(zip(start_gpus, end_gpus)):
-                    gpu_prefix = f'gpu_{i}_'  # 为每个GPU指标添加前缀，如gpu_0_load_change
-                    differences.update({
-                        gpu_prefix + 'load_change': end_gpu['gpu_load'] - start_gpu['gpu_load'],
-                        gpu_prefix + 'free_memory_change': end_gpu['gpu_free_memory'] - start_gpu['gpu_free_memory'],
-                        gpu_prefix + 'used_memory_change': end_gpu['gpu_used_memory'] - start_gpu['gpu_used_memory'],
-                        gpu_prefix + 'temperature_change': end_gpu['gpu_temperature'] - start_gpu['gpu_temperature'],
-                    })
-            elif 'bytes' in key:
-                # 对于磁盘和网络I/O，我们关心的是差异
-                differences[key] = end_metrics[key] - start_metrics[key]
-            else:
-                # 对于CPU和内存，我们可能更关心最终的利用率
-                differences[key] = end_metrics[key]
-        return differences
+    # def calculate_metric_differences(self,start_metrics, end_metrics):
+    #     differences = {}
+    #     for key in start_metrics:
+    #         if key == 'gpu_metrics':
+    #             # 处理GPU指标差异
+    #             start_gpus = start_metrics[key]
+    #             end_gpus = end_metrics[key]
+    #             for i, (start_gpu, end_gpu) in enumerate(zip(start_gpus, end_gpus)):
+    #                 gpu_prefix = f'gpu_{i}_'  # 为每个GPU指标添加前缀，如gpu_0_load_change
+    #                 differences.update({
+    #                     gpu_prefix + 'load_change': end_gpu['gpu_load'] - start_gpu['gpu_load'],
+    #                     gpu_prefix + 'free_memory_change': end_gpu['gpu_free_memory'] - start_gpu['gpu_free_memory'],
+    #                     gpu_prefix + 'used_memory_change': end_gpu['gpu_used_memory'] - start_gpu['gpu_used_memory'],
+    #                     gpu_prefix + 'temperature_change': end_gpu['gpu_temperature'] - start_gpu['gpu_temperature'],
+    #                 })
+    #         elif 'bytes' in key:
+    #             # 对于磁盘和网络I/O，我们关心的是差异
+    #             differences[key] = end_metrics[key] - start_metrics[key]
+    #         else:
+    #             # 对于CPU和内存，我们可能更关心最终的利用率
+    #             differences[key] = end_metrics[key]
+    #     return differences
+
+    async def fetch_and_process_model_output(self, prompt_function, question):
+        """从模型获取并处理输出的助手函数。"""
+        prompt = prompt_function(question)
+        print(f"prompt: {prompt}")
+        markdown_text = await self.model_to_test.evaluate_model(prompt)
+        answer_tokens = len(self.model_to_test.encode_text_to_tokens(markdown_text))
+        return LanguageDetector.markdown_to_json(markdown_text)
+
 
                 
-    async def evaluate_and_log_async(self, question, question_type, true_answer, question_num):
+    async def evaluate_and_log_async(self, question, question_type, true_answer, question_num, true_option):
         """
         不需要context直接让模型回答问题再评估
         """
+        print('*'*50)
+        print(f"question: {question}")
         question_tokens = len(self.model_to_test.encode_text_to_tokens(question))
         
         # if self.save_results:
@@ -161,14 +183,42 @@ class LLMExamTester(LLMNeedleHaystackTester):
         #         return
             
         # 在测试开始时
-        start_metrics = self.get_system_and_gpu_metrics()
+        start_metrics = SystemInfo.get_system_and_gpu_metrics()
         prompt = self.model_to_test.generate_answer(question)
         print(f"prompt: {prompt}")
         test_start_time = time.time()
         
-        response = await self.model_to_test.evaluate_model(prompt)
-        answer_tokens = len(self.model_to_test.encode_text_to_tokens(response))
+        markdown_text = await self.model_to_test.evaluate_model(prompt)
+        answer_tokens = len(self.model_to_test.encode_text_to_tokens(markdown_text))
         
+        
+        # response = LanguageDetector.markdown_to_json(markdown_text)
+        # if response is None:
+        #     prompt = self.model_to_test.generate_markdwon_answer(question)    
+        #     markdown_text = await self.model_to_test.evaluate_model(prompt)
+        #     answer_tokens = len(self.model_to_test.encode_text_to_tokens(markdown_text))  
+        #     response = LanguageDetector.markdown_to_json(markdown_text) 
+        
+        
+        # 尝试第一种方式获取和处理模型的输出
+        response = await self.fetch_and_process_model_output(self.model_to_test.generate_answer, question)
+        if response is None:
+            # 如果第一次尝试失败，使用第二种方式
+            response = await self.fetch_and_process_model_output(self.model_to_test.generate_markdown_answer, question)
+            if response is None:
+                print("未能获取有效的JSON响应。")
+                response = { "option": "","explanation": ""}
+        
+            
+        # response = json.loads(response)
+        model_option = response['option']
+        model_explanation = response['explanation']
+        
+        model_option_str = ', '.join(model_option) if isinstance(model_option, list) else model_option
+        model_explanation_str = ', '.join(model_explanation) if isinstance(model_explanation, list) else model_explanation
+
+        model_response = model_option_str + ", " + model_explanation_str
+
         test_end_time = time.time()
         test_elapsed_time = test_end_time - test_start_time
         print(f"response: {response}")
@@ -177,8 +227,8 @@ class LLMExamTester(LLMNeedleHaystackTester):
         # score = await self.evaluation_model.evaluate_response_async(response, self.true_answer, question)
         
         # 在测试结束时
-        end_metrics = self.get_system_and_gpu_metrics()
-        metric_differences = self.calculate_metric_differences(start_metrics, end_metrics)
+        end_metrics = SystemInfo.get_system_and_gpu_metrics()
+        metric_differences = SystemInfo.calculate_metric_differences(start_metrics, end_metrics)
         
         
         results = {
@@ -188,8 +238,10 @@ class LLMExamTester(LLMNeedleHaystackTester):
             'question_tokens' : question_tokens,
             'question_type' : question_type,
             'version' : self.results_version,
+            'true_option' : true_option,
             'true_answer' : true_answer,
-            'model_response' : response,
+            'model_response' : model_response,
+            'model_option' : model_option_str,
             'instruction' : question,
             'num_concurrent_requests' : self.num_concurrent_requests,
             # 'score' : score,
@@ -347,8 +399,9 @@ class LLMExamTester(LLMNeedleHaystackTester):
                 question_type = df_sampled['kind'][i]
                 true_answer = df_sampled['reference'][i]
                 quesiton_num = df_sampled['num'][i]
+                answer = df_sampled['Answer'][i]
                 
-                task = self.bound_evaluate_and_log_async(sem, question, question_type, true_answer, quesiton_num)
+                task = self.bound_evaluate_and_log_async(sem, question, question_type, true_answer, quesiton_num, answer)
                 tasks.append(task)
                     
         else:

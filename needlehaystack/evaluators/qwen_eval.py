@@ -18,6 +18,8 @@ model_dict ={
     "qwen1.5-14B": "/home/dff652/llm_models/qwen/Qwen1___5-14B/",
     "qwen1.5-MoE-A2.7B-Chat": "/home/dff652/llm_models/qwen/Qwen1___5-MoE-A2___7B-Chat/",
     "qwen1.5-32B-Chat": "/home/dff652/llm_models/qwen/Qwen1___5-32B-Chat/",
+    "qwen1.5-32B-Chat-AWQ": "/home/dff652/llm_models/qwen/Qwen1___5-32B-Chat-AWQ/",
+    "qwen1.5-14B-Chat": "/home/dff652/llm_models/qwen/Qwen1___5-14B-Chat/",
 }
 
 class QwenEvaluator(Evaluator):
@@ -69,12 +71,16 @@ class QwenEvaluator(Evaluator):
         --- --- ---
         {criteria}
 
-        Based on the above, provide a score  that reflects how well the model's response aligns with the correct answer according to the given criteria. 
+        Based on the content above, score the answer options, and the scoring result should only have two options: 0 and 1.
         Also, briefly explain the reason for your score. 
         result must in dict form and contain reasoning and score.
-        最终输出必须用markdown格式:
+        最终输出必须用markdown格式,示例如下：
         ```json
-        result
+        {
+            "score": 1,
+            "reasoning": "原因"
+        
+        }
         ```
         """
                 },

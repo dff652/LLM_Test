@@ -26,31 +26,31 @@ import numpy as np
 #                               document_depth_percents = depth_percent,)
 # ht.start_test()
 
-def test_qwen(depth_percent, context_length, retrieval_question, needle):
-    qwen_model = qwen.Qwen(model_name="qwen1.5-7B-Chat")
-    openai_evaluator = openai.OpenAIEvaluator(model_name="gpt-3.5-turbo-0125",
-                                              true_answer = needle,
-                                              question_asked = retrieval_question)
-    # ht  = LLMNeedleHaystackTester(model_to_test=qwen_model,
-    #                               evaluator = openai_evaluator,
-    #                               needle = needle,
-    #                               haystack= "PaulGrahamEssays",
-    #                               retrieval_question= retrieval_question,
-    #                               context_lengths = context_length,
-    #                               document_depth_percents = depth_percent,
-    #                               )
-    ht = LLMExamTester(model_to_test=qwen_model,
-                          evaluator = openai_evaluator,
-                          question = retrieval_question,
-                          question_type = "exam",
-                          question_path = "Exam/",
-                          exam_results_dir = "",
-                          exam_set = "exam",
-                          frac =1,
-                          num_concurrent_requests = 1
-                          )
-    print(66666)
-    ht.start_test()
+# def test_qwen(depth_percent, context_length, retrieval_question, needle):
+#     qwen_model = qwen.Qwen(model_name="qwen1.5-7B-Chat")
+#     openai_evaluator = openai.OpenAIEvaluator(model_name="gpt-3.5-turbo-0125",
+#                                               true_answer = needle,
+#                                               question_asked = retrieval_question)
+#     # ht  = LLMNeedleHaystackTester(model_to_test=qwen_model,
+#     #                               evaluator = openai_evaluator,
+#     #                               needle = needle,
+#     #                               haystack= "PaulGrahamEssays",
+#     #                               retrieval_question= retrieval_question,
+#     #                               context_lengths = context_length,
+#     #                               document_depth_percents = depth_percent,
+#     #                               )
+#     ht = LLMExamTester(model_to_test=qwen_model,
+#                           evaluator = openai_evaluator,
+#                           question = retrieval_question,
+#                           question_type = "exam",
+#                           question_path = "Exam/",
+#                           exam_results_dir = "",
+#                           exam_set = "exam",
+#                           frac =1,
+#                           num_concurrent_requests = 1
+#                           )
+#     print(66666)
+#     ht.start_test()
     
 # for depth in tqdm.tqdm(range(10,100,20)):
 #     for context in range(100, 1000, 200):
@@ -87,39 +87,39 @@ def test_qwen(depth_percent, context_length, retrieval_question, needle):
 # 4. GPU和CPU推理效果对比
 
 
-# model_name = "qwen1.5-MoE-A2.7B-Chat"
+model_name = "qwen1.5-MoE-A2.7B-Chat"
 # model_name = "qwen1.5-7B-Chat"
 # model_name = "qwen1.5-32B-Chat-AWQ"
 # model_name = 'qwen1.5-14B-Chat'
-for model_name in ["qwen1.5-32B-Chat-AWQ",'qwen1.5-14B-Chat',]:
-    qwen_model = qwen.Qwen(model_name = model_name)
+# for model_name in ["qwen1.5-32B-Chat-AWQ",'qwen1.5-14B-Chat',]:
 
-    # exam_path = '/home/dff652/benchmarks/LLM_Test/needlehaystack/Exam/test_0.4_en.xlsx'
-    exam_path = '/home/dff652/benchmarks/LLM_Test/needlehaystack/Exam/test_0.4_zh.xlsx'
-    ht = LLMExamTester(model_to_test=qwen_model,
-                            # evaluator = openai_evaluator,
-                            #   question = retrieval_question,
-                            question_type = "exam",
-                            question_path = exam_path,
-                            exam_results_dir = "",
-                            exam_set = "exam",
-                            num_concurrent_requests = 10,
-                            frac = 1
-                            )
-    print(66666)
-    ht.start_test()
+
+# exam_path = '/home/dff652/benchmarks/LLM_Test/needlehaystack/Exam/test_0.4_en.xlsx'
+exam_path = '/home/dff652/benchmarks/LLM_Test/needlehaystack/Exam/test_0.4_zh.xlsx'
+
+qwen_model = qwen.Qwen(model_name = model_name)
+ht = LLMExamTester(model_to_test=qwen_model,
+                        # evaluator = openai_evaluator,
+                        #   question = retrieval_question,
+                        question_type = "exam",
+                        question_path = exam_path,
+                        exam_results_dir = "",
+                        exam_set = "exam",
+                        num_concurrent_requests = 50,
+                        frac = 0.1,
+                        results_version = 0.4
+                        )
+print(66666)
+ht.start_test()
 
 # openai_evaluator = openai.OpenAIEvaluator(model_name="gpt-3.5-turbo-0125",
 #                                             true_answer = 'needle',
 #                                             question_asked = 'retrieval_question'
 #                                             )
 
-
-# model_name = "qwen1.5-7B-Chat"
-# # model_name = "qwen1.5-14B"
 # qwen_evaluator = qwen_eval.QwenEvaluator(model_name=model_name)
 
-# exam_path = '/home/dff652/benchmarks/LLM_Test/exam_results/qwen1_5-7B-Chat_question_type_exam_20240408_141046_50.csv'
+# exam_path = '/home/dff652/benchmarks/test_res/test_eng/qwen1_5-7B-Chat_question_type_exam_20240408_141046_50_human_eval.csv'
 
 # he = LLMEvaluator(evaluator = qwen_evaluator,
 #                   read_results_path = exam_path,
