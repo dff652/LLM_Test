@@ -94,8 +94,8 @@ model_name = "qwen1.5-MoE-A2.7B-Chat"
 # for model_name in ["qwen1.5-32B-Chat-AWQ",'qwen1.5-14B-Chat',]:
 
 
-# exam_path = '/home/dff652/benchmarks/LLM_Test/needlehaystack/Exam/test_0.4_en.xlsx'
-exam_path = '/home/dff652/benchmarks/LLM_Test/needlehaystack/Exam/test_0.4_zh.xlsx'
+exam_path = '/home/dff652/benchmarks/LLM_Test/needlehaystack/Exam/test_0.4_en.xlsx'
+# exam_path = '/home/dff652/benchmarks/LLM_Test/needlehaystack/Exam/test_0.4_zh.xlsx'
 
 qwen_model = qwen.Qwen(model_name = model_name)
 ht = LLMExamTester(model_to_test=qwen_model,
@@ -106,7 +106,7 @@ ht = LLMExamTester(model_to_test=qwen_model,
                         exam_results_dir = "",
                         exam_set = "exam",
                         num_concurrent_requests = 50,
-                        frac = 0.1,
+                        frac = 1,
                         results_version = 0.4
                         )
 print(66666)
