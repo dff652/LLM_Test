@@ -134,15 +134,68 @@ class Qwen(ModelProvider):
                 )
         return chain
     
+    # def generate_markdown_answer(self, retrieval_question: str) ->  str | list[dict[str, str]]:
+        
+    #     return [
+    #         {
+    #             "role": "system",
+    #             "content": """You are a helpful AI bot that answers questions for a user. Keep your response short and direct"""
+    #         },
+    #         {"role": "user",
+    #          "content": f"""{retrieval_question} 
+    #         result must in dict form and contain option and explanation.
+    #         最终输出必须用markdown格式,示例如下：
+    #         ```json
+    #             {"option": "a",
+    #             "explanation": "解释"}
+    #         ```
+    #         """
+    #         },  
+    #     ]
+    
+    # def generate_answer(self, retrieval_question: str) ->  str | list[dict[str, str]]:
+        
+    #     return [
+    #         {
+    #         "role": "system",
+    #         "content": """You are a helpful AI bot that answers questions for a user. Please respond with a direct answer followed by a brief explanation, 
+    #         both enclosed in a JSON object formatted within a Markdown code block. Incorrect formats will not be accepted."""
+    #         },
+    #         {"role": "user",
+    #          "content": f"""
+    #          {retrieval_question} 
+    #         result must in dict form and contain option and explanation.
+    #         for example:{{"option": "a","explanation": "This is why option A is correct."}}
+    #         """
+    #         }, 
+    #     ]
+        
+    
+    def generate_markdown_answer(self, retrieval_question: str) ->  str | list[dict[str, str]]:
+        return [
+            {
+                "role": "system",
+                "content": "You are a helpful AI bot that answers questions for a user. Please respond with a direct answer followed by a brief explanation, both enclosed in a JSON object formatted within a Markdown code block. Incorrect formats will not be accepted."
+            },
+            {"role": "user",
+            "content": f"{retrieval_question}\n\nPlease provide your answer in the following format:\n```json\n{{\"option\": \"a\", \"explanation\": \"This is why option A is correct.\"}}\n```\n"
+            },  
+        ]
+        
+    
     def generate_answer(self, retrieval_question: str) ->  str | list[dict[str, str]]:
         
-        return [{
-                "role": "system",
-                "content": "You are a helpful AI bot that answers questions for a user. Keep your response short and direct"
-            },
+        return [
             {
-                "role": "user",
-                "content": f"{retrieval_question} Give an correct answer and specific explanation"
-            }]
+            "role": "system",
+            "content": """You are a helpful AI bot that answers questions for a user. Please respond with a direct answer followed by a brief explanation, 
+            both enclosed in a JSON object formatted within a Markdown code block. Incorrect formats will not be accepted."""
+            },
+            {"role": "user",
+             "content": f"{retrieval_question}\n\nPlease provide your answer in the following format:\n{{\"option\": \"a\", \"explanation\": \"This is why option A is correct.\"}}\n"
+            },  
+        ]
+
+
         
         

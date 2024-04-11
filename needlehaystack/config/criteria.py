@@ -64,9 +64,8 @@ CRITERIA_NEEDLEHAYSTACK = {"accuracy": """
 
 CRITERIA_EXAM = {
     "evaluation_criteria": """
-        score options: 0,  1, Dont out of options
-        Score 1: Correct, The chosen option is  correct .     
-        Score 0: Incorrect, The chosen option is incorrect.   
+        Score 1: 只要回答中的选项正确就给1分，不用管其他内容 .     
+        Score 0: 只要回答中的选项错误就给0分，不用管其他内容.   
         respond with a numerical score and reasoning 
     """
 }
