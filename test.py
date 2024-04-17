@@ -26,31 +26,37 @@ import numpy as np
 #                               document_depth_percents = depth_percent,)
 # ht.start_test()
 
-# def test_qwen(depth_percent, context_length, retrieval_question, needle):
-#     qwen_model = qwen.Qwen(model_name="qwen1.5-7B-Chat")
-#     openai_evaluator = openai.OpenAIEvaluator(model_name="gpt-3.5-turbo-0125",
-#                                               true_answer = needle,
-#                                               question_asked = retrieval_question)
-#     # ht  = LLMNeedleHaystackTester(model_to_test=qwen_model,
-#     #                               evaluator = openai_evaluator,
-#     #                               needle = needle,
-#     #                               haystack= "PaulGrahamEssays",
-#     #                               retrieval_question= retrieval_question,
-#     #                               context_lengths = context_length,
-#     #                               document_depth_percents = depth_percent,
-#     #                               )
-#     ht = LLMExamTester(model_to_test=qwen_model,
-#                           evaluator = openai_evaluator,
-#                           question = retrieval_question,
-#                           question_type = "exam",
-#                           question_path = "Exam/",
-#                           exam_results_dir = "",
-#                           exam_set = "exam",
-#                           frac =1,
-#                           num_concurrent_requests = 1
-#                           )
-#     print(66666)
-#     ht.start_test()
+def test_qwen(model_name, eval_model, depth_percent, context_length, retrieval_question, needle):
+    qwen_model = qwen.Qwen(model_name= model_name)
+    if eval_model == 'gpt-3.5-turbo-0125':
+        evaluator = openai.OpenAIEvaluator(model_name=eval_model,
+                                                  true_answer = needle,
+                                                  question_asked = retrieval_question)
+    else:
+        evaluator = qwen_eval.QwenEvaluator(model_name = eval_model,
+                                            true_answer = needle,
+                                            question_asked = retrieval_question)
+    ht  = LLMNeedleHaystackTester(model_to_test=qwen_model,
+                                  evaluator = evaluator,
+                                  needle = needle,
+                                  haystack= "PaulGrahamEssays",
+                                  retrieval_question= retrieval_question,
+                                  context_lengths = context_length,
+                                  document_depth_percents = depth_percent,
+                                  num_concurrent_requests = 20
+                                  )
+    # ht = LLMExamTester(model_to_test=qwen_model,
+    #                       evaluator = openai_evaluator,
+    #                       question = retrieval_question,
+    #                       question_type = "exam",
+    #                       question_path = "Exam/",
+    #                       exam_results_dir = "",
+    #                       exam_set = "exam",
+    #                       frac =1,
+    #                       num_concurrent_requests = 1
+    #                       )
+    print(66666)
+    ht.start_test()
     
 # for depth in tqdm.tqdm(range(10,100,20)):
 #     for context in range(100, 1000, 200):
@@ -86,31 +92,41 @@ import numpy as np
 # 3. 不同gpu数量,单卡和多卡
 # 4. GPU和CPU推理效果对比
 
-
-model_name = "qwen1.5-MoE-A2.7B-Chat"
-# model_name = "qwen1.5-7B-Chat"
+# for model_name in ["qwen1.5-32B-Chat-AWQ",'qwen1.5-14B-Chat',]:
+# model_name = "qwen1.5-MoE-A2.7B-Chat"
+model_name = "qwen1.5-7B-Chat"
 # model_name = "qwen1.5-32B-Chat-AWQ"
 # model_name = 'qwen1.5-14B-Chat'
-# for model_name in ["qwen1.5-32B-Chat-AWQ",'qwen1.5-14B-Chat',]:
+# eval_model = 'qwen1.5-14B-Chat'
+eval_model = 'gpt-3.5-turbo-0125'
+
+needle = "\n在旧金山最好的事情是在一个阳光明媚的日子里吃三明治并坐在多洛雷斯公园。\n"
+retrieval_question = "在旧金山最好的事情是什么？"
+
+context_length = np.arange(500, 10000, 500).tolist()
+depth_percent = np.arange(10, 100, 10).tolist()
+test_qwen(model_name, eval_model,depth_percent, context_length, retrieval_question, needle)  
 
 
-exam_path = '/home/dff652/benchmarks/LLM_Test/needlehaystack/Exam/test_0.4_en.xlsx'
+
+
+# exam_path = '/home/dff652/benchmarks/LLM_Test/needlehaystack/Exam/test_0.4_en.xlsx'
 # exam_path = '/home/dff652/benchmarks/LLM_Test/needlehaystack/Exam/test_0.4_zh.xlsx'
 
-qwen_model = qwen.Qwen(model_name = model_name)
-ht = LLMExamTester(model_to_test=qwen_model,
-                        # evaluator = openai_evaluator,
-                        #   question = retrieval_question,
-                        question_type = "exam",
-                        question_path = exam_path,
-                        exam_results_dir = "",
-                        exam_set = "exam",
-                        num_concurrent_requests = 50,
-                        frac = 1,
-                        results_version = 0.4
-                        )
-print(66666)
-ht.start_test()
+# qwen_model = qwen.Qwen(model_name = model_name)
+# ht = LLMExamTester(model_to_test=qwen_model,
+#                         # evaluator = openai_evaluator,
+#                         #   question = retrieval_question,
+#                         question_type = "exam",
+#                         question_path = exam_path,
+#                         exam_results_dir = "",
+#                         exam_set = "exam",
+#                         num_concurrent_requests = 50,
+#                         frac = 1,
+#                         results_version = 0.4
+#                         )
+# print(66666)
+# ht.start_test()
 
 # openai_evaluator = openai.OpenAIEvaluator(model_name="gpt-3.5-turbo-0125",
 #                                             true_answer = 'needle',

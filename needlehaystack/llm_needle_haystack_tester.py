@@ -109,6 +109,8 @@ class LLMNeedleHaystackTester:
         self.model_name = self.model_to_test.model_name
         
         self.evaluation_model = evaluator
+        
+        self.start_time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     def logistic(self, x, L=100, x0=50, k=.1):
         if x in [0, 100]:
@@ -171,7 +173,7 @@ class LLMNeedleHaystackTester:
         test_elapsed_time = test_end_time - test_start_time
 
         # Compare the reponse to the actual needle you placed
-        score = self.evaluation_model.evaluate_response(response)
+        score, reasoning = self.evaluation_model.evaluate_response(response)
 
         results = {
             # 'context' : context, # Uncomment this line if you'd like to save the context the model was asked to retrieve from. Warning: This will become very large.
@@ -179,11 +181,14 @@ class LLMNeedleHaystackTester:
             'context_length' : int(context_length),
             'depth_percent' : float(depth_percent),
             'version' : self.results_version,
+            'question' : self.retrieval_question,
             'needle' : self.needle,
             'model_response' : response,
             'score' : score,
+            'reasoning' : reasoning,
             'test_duration_seconds' : test_elapsed_time,
-            'test_timestamp_utc' : datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S%z')
+            'test_timestamp_utc' : datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S%z'),
+            'evaluator' : self.evaluation_model.model_name
         }
 
         self.testing_results.append(results)
@@ -200,8 +205,9 @@ class LLMNeedleHaystackTester:
         context_language = self.language_detection(context)
         print({"context_language":context_language})
 
-        context_file_location = f'{self.model_name.replace(".", "_")}_len_{context_length}_depth_{int(depth_percent*100)}_{context_language}'
-
+        # context_file_location = f'{self.model_name.replace(".", "_")}_len_{context_length}_depth_{int(depth_percent*100)}_{context_language}_{self.start_time_str}'
+        context_file_location = f'{self.model_name.replace(".", "_")}_{context_language}_{self.start_time_str}'
+        
         base_dir = os.path.abspath(os.path.dirname(__file__))
         parent_dir = os.path.abspath(os.path.join(base_dir, os.pardir))
         print({"base_dir":base_dir})
@@ -230,8 +236,8 @@ class LLMNeedleHaystackTester:
             needle_language = self.language_detection(self.needle)
             
             # Save the result to file for retesting
-            with open(f'{results_dir}{context_file_location}_results_{needle_language}.json', 'w') as f:
-                json.dump(testing_results, f)
+            with open(f'{results_dir}{context_file_location}_results_{needle_language}.json', 'a') as f:
+                json.dump(self.testing_results, f)
 
         if self.seconds_to_sleep_between_completions:
             await asyncio.sleep(self.seconds_to_sleep_between_completions)
@@ -249,13 +255,29 @@ class LLMNeedleHaystackTester:
         for filename in os.listdir(results_dir):
             if filename.endswith('.json'):
                 with open(os.path.join(results_dir, filename), 'r') as f:
-                    result = json.load(f)
-                    context_length_met = result['context_length'] == context_length
-                    depth_percent_met = result['depth_percent'] == depth_percent
-                    version_met = result.get('version', 1) == self.results_version
-                    model_met = result['model'] == self.model_name
-                    if context_length_met and depth_percent_met and version_met and model_met:
-                        return True
+                    try:
+                        results = json.load(f)
+                    except json.JSONDecodeError:
+                        print(f"Error decoding JSON from {filename}")
+                        continue  # Skip this file and move to the next
+                    if isinstance(results, list):
+                        for result in results:
+                            context_length_met = result['context_length'] == context_length
+                            depth_percent_met = result['depth_percent'] == depth_percent
+                            version_met = result.get('version', 1) == self.results_version
+                            model_met = result['model'] == self.model_name
+                            if context_length_met and depth_percent_met and version_met and model_met:
+                                return True
+                    elif isinstance(results, dict):
+                        context_length_met = results['context_length'] == context_length
+                        depth_percent_met = results['depth_percent'] == depth_percent
+                        version_met = results.get('version', 1) == self.results_version
+                        model_met = results['model'] == self.model_name
+                        if context_length_met and depth_percent_met and version_met and model_met:
+                            return True
+                    else:
+                        print(f"Unexpected format in {filename}")
+                        return False
         return False
 
     async def generate_context(self, context_length, depth_percent):

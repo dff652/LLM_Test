@@ -67,7 +67,7 @@ class OpenAIEvaluator(Evaluator):
             input=self.question_asked,
         )
 
-        return int(eval_result['score'])
+        return int(eval_result['score']), eval_result['reasoning']
 
     async def evaluate_response_async(self, 
                                       response: str,
