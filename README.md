@@ -10,7 +10,7 @@
     主要测试模型长文本推理能力
 
 # Rodamap
-- [x] 本地评估模型：Qwen系列(7b,14b,32b), Together.ai的在线api, OpenAI 在线api
+- [x] 本地评估模型：Qwen系列(7b,14b,32b)，Together.ai的在线api，OpenAI 在线api
 - [x] 本地测试模型：Qwen系列(7b,14b,32b)
 - [ ] CPU推理测试 
 - [x] 性能测试 
