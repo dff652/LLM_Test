@@ -19,7 +19,7 @@ class TogetherAPI:
                  model_name: str = "mistralai/Mixtral-8x7B-Instruct-v0.1",
                  model_kwargs: dict = DEFAULT_MODEL_KWARGS,
                  true_answer: str = '',
-                 question_asked: str = '',)
+                 question_asked: str = '',):
     
         self.api_key = TOGETHER_API_KEY
         self.base_url = base_url

@@ -59,7 +59,7 @@ class QwenEvaluator(Evaluator):
         
         return [
         {"role": "system",
-         "content": """You are an evaluator AI designed to assess answers provided by another AI model. You will be given a correct answer, a model's response, and specific criteria for evaluation. Your task is to provide a score based on how well the model's response meets the criteria, where 1 is the lowest and 10 is the highest score. Keep your assessment concise and objective."""
+         "content": """You are an evaluator AI designed to assess answers provided by another AI model. You will be given a correct answer, a model's response, and specific criteria for evaluation. Your task is to provide a score based on how well the model's response meets the criteria. Keep your assessment concise and objective."""
         },
         {"role": "user",
          "content": f"""

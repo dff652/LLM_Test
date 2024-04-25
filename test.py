@@ -1,9 +1,9 @@
 from needlehaystack import LLMNeedleHaystackTester, LLMExamTester, LLMEvaluator
 from needlehaystack.providers import qwen
-from needlehaystack.evaluators import openai, qwen_eval
+from needlehaystack.evaluators import openai, qwen_eval, together_api
 import tqdm
 import numpy as np
-
+from retry import retry
 
 # needle = "\nThe best thing to do in San Francisco is eat a sandwich and sit in Dolores Park on a sunny day.\n"
 # retrieval_question = "What is the best thing to do in San Francisco?"
@@ -26,20 +26,26 @@ import numpy as np
 #                               document_depth_percents = depth_percent,)
 # ht.start_test()
 
+@retry(tries=5, delay=2)
 def test_qwen(model_name, eval_model, depth_percent, context_length, retrieval_question, needle):
     qwen_model = qwen.Qwen(model_name= model_name)
-    if eval_model == 'gpt-3.5-turbo-0125':
+    if 'gpt' in eval_model :
         evaluator = openai.OpenAIEvaluator(model_name=eval_model,
                                                   true_answer = needle,
                                                   question_asked = retrieval_question)
-    else:
+    elif 'qwen' in eval_model:
         evaluator = qwen_eval.QwenEvaluator(model_name = eval_model,
                                             true_answer = needle,
                                             question_asked = retrieval_question)
+    else:
+        evaluator = together_api.TogetherAPIEvaluator(model_name = eval_model,
+                                                      true_answer = needle,
+                                                      question_asked = retrieval_question)
+        
     ht  = LLMNeedleHaystackTester(model_to_test=qwen_model,
                                   evaluator = evaluator,
                                   needle = needle,
-                                  haystack= "PaulGrahamEssays",
+                                  haystack_dir= "Test",
                                   retrieval_question= retrieval_question,
                                   context_lengths = context_length,
                                   document_depth_percents = depth_percent,
@@ -94,18 +100,26 @@ def test_qwen(model_name, eval_model, depth_percent, context_length, retrieval_q
 
 # for model_name in ["qwen1.5-32B-Chat-AWQ",'qwen1.5-14B-Chat',]:
 # model_name = "qwen1.5-MoE-A2.7B-Chat"
-model_name = "qwen1.5-7B-Chat"
+# model_name = "qwen1.5-7B-Chat"
 # model_name = "qwen1.5-32B-Chat-AWQ"
 # model_name = 'qwen1.5-14B-Chat'
 # eval_model = 'qwen1.5-14B-Chat'
-eval_model = 'gpt-3.5-turbo-0125'
+# eval_model = 'gpt-3.5-turbo-0125'
+# eval_model = 'mistralai/Mixtral-8x7B-Instruct-v0.1'
+# eval_model = 'meta-llama/Llama-3-70b-chat-hf'
+eval_model = 'Qwen/Qwen1.5-72B-Chat'
 
-needle = "\n在旧金山最好的事情是在一个阳光明媚的日子里吃三明治并坐在多洛雷斯公园。\n"
-retrieval_question = "在旧金山最好的事情是什么？"
+# needle = "\n在旧金山最好的事情是在一个阳光明媚的日子里吃三明治并坐在多洛雷斯公园。\n"
+# retrieval_question = "在旧金山最好的事情是什么？"
+
+
+needle = "\nThe best thing to do in San Francisco is eat a sandwich and sit in Dolores Park on a sunny day.\n"
+retrieval_question = "What is the best thing to do in San Francisco?"
 
 context_length = np.arange(500, 10000, 500).tolist()
 depth_percent = np.arange(10, 100, 10).tolist()
-test_qwen(model_name, eval_model,depth_percent, context_length, retrieval_question, needle)  
+for model_name in ["qwen1.5-7B-Chat", "qwen1.5-14B-Chat", "qwen1.5-MoE-A2.7B-Chat",  "qwen1.5-32B-Chat-AWQ"]:
+    test_qwen(model_name, eval_model,depth_percent, context_length, retrieval_question, needle)  
 
 
 
