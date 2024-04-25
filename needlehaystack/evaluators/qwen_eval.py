@@ -9,6 +9,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, TextStreamer
 from transformers import AutoModel, pipeline
 import torch
 import json
+from ..utils import LanguageDetector
 
 device_map = 'auto'
 device = "cuda"
@@ -47,13 +48,18 @@ class QwenEvaluator(Evaluator):
                                                           device_map=device_map,
                                                           torch_dtype=torch.float16)
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
-        self.CRITERIA = CRITERIA_EXAM
+        self.CRITERIA = CRITERIA_NEEDLEHAYSTACK
     
     
     def generate_answer(self,  response: str, true_answer: str, question_asked: str, criteria: str) -> list[dict[str, str]]:
+        print("response:", response)
+        print("true_answer:", true_answer)
+        print("question_asked:", question_asked)
+        print("criteria:", criteria)
+        
         return [
         {"role": "system",
-         "content": """You are an evaluator AI designed to assess answers provided by another AI model. You will be given a correct answer, a model's response, and specific criteria for evaluation. Your task is to provide a score based on how well the model's response meets the criteria, where 1 is the lowest and 10 is the highest score. Keep your assessment concise and objective."""
+         "content": """You are an evaluator AI designed to assess answers provided by another AI model. You will be given a correct answer, a model's response, and specific criteria for evaluation. Your task is to provide a score based on how well the model's response meets the criteria. Keep your assessment concise and objective."""
         },
         {"role": "user",
          "content": f"""
@@ -71,16 +77,15 @@ class QwenEvaluator(Evaluator):
         --- --- ---
         {criteria}
 
-        Based on the content above, score the answer options, and the scoring result should only have two options: 0 and 1.
-        Also, briefly explain the reason for your score. 
+        Based on the content above,  briefly explain the reason for your score. 
         result must in dict form and contain reasoning and score.
         最终输出必须用markdown格式,示例如下：
         ```json
-        {
+        {{
             "score": 1,
             "reasoning": "原因"
         
-        }
+        }}
         ```
         """
                 },
@@ -88,7 +93,7 @@ class QwenEvaluator(Evaluator):
         ]
     
     async def evaluate_response_async(self,  response: str, true_answer: str, question_asked: str) -> dict:
-        prompt = self.generate_answer(question_asked, true_answer, response, self.CRITERIA)
+        prompt = self.generate_answer(response , true_answer, question_asked, self.CRITERIA)
         text = self.tokenizer.apply_chat_template(prompt,
                                                   tokenize=False,
                                                   add_generation_prompt=True,
@@ -121,21 +126,31 @@ class QwenEvaluator(Evaluator):
     
     
     def evaluate_response(self, response: str) -> int:
-        evaluator = load_evaluator(
-            "labeled_score_string",
-            criteria=self.CRITERIA,
-            llm=self.evaluator,
-        )
+        prompt = self.generate_answer(response , self.true_answer, self.question_asked, self.CRITERIA)
+        text = self.tokenizer.apply_chat_template(prompt,
+                                                  tokenize=False,
+                                                  add_generation_prompt=True,
+                                                  **self.model_kwargs
+                                                  )
+        model_inputs = self.tokenizer([text], return_tensors="pt").to(device)
+        
+        generated_ids = self.evaluator.generate(model_inputs.input_ids,
+                                       max_new_tokens=1024)
+        
+        generated_ids = [output_ids[len(input_ids):] for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)]
+        
+        eval_response =  self.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
+        
+        eval_result = LanguageDetector.markdown_to_json(eval_response)
+        print('eval_result:', eval_result)
+        print('type(eval_result):', type(eval_result))
+        if isinstance(eval_result, str):
+            eval_result = json.loads(eval_result)
+            return int(eval_result['score']), eval_result['reasoning']
+        elif isinstance(eval_result, dict):
+            return int(eval_result['score']), eval_result['reasoning']
+        
+        else:
+            return 0, 'Error decoding json'
+    
 
-        eval_result = evaluator.evaluate_strings(
-            # The models response
-            prediction=response,
-
-            # The actual answer
-            reference=self.true_answer,
-
-            # The question asked
-            input=self.question_asked,
-        )
-
-        return int(eval_result['score'])

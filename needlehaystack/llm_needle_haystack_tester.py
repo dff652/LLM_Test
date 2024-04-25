@@ -11,6 +11,7 @@ from .providers import ModelProvider
 
 from asyncio import Semaphore
 from datetime import datetime, timezone
+from itertools import product
 
 class LLMNeedleHaystackTester:
     """
@@ -21,6 +22,8 @@ class LLMNeedleHaystackTester:
                  evaluator: Evaluator = None,
                  needle = None,
                  haystack_dir = "PaulGrahamEssays",
+                 result_dir = 'results/',
+                 context_dir = 'contexts/',
                  retrieval_question = None,
                  results_version = 1,
                  context_lengths_min = 1000,
@@ -109,6 +112,10 @@ class LLMNeedleHaystackTester:
         self.model_name = self.model_to_test.model_name
         
         self.evaluation_model = evaluator
+        
+        self.start_time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.results_dir = result_dir
+        self.context_dir = context_dir
 
     def logistic(self, x, L=100, x0=50, k=.1):
         if x in [0, 100]:
@@ -127,7 +134,7 @@ class LLMNeedleHaystackTester:
     
     def language_detection(self,context):
         if self.is_chinese(context):
-            return "ch"
+            return "zh"
         else:
             return "en"
     
@@ -141,20 +148,47 @@ class LLMNeedleHaystackTester:
 
         # Run through each iteration of context_lengths and depths
         tasks = []
-        for context_length in self.context_lengths:
-            for depth_percent in self.document_depth_percents:
-                task = self.bound_evaluate_and_log(sem, context_length, depth_percent)
-                tasks.append(task)
+        
+        # 生成所有参数组合
+        all_combinations = product(self.context_lengths, self.document_depth_percents, ['en', 'zh'], ['en', 'zh'])
+
+        for context_length, depth_percent, context_language, needle_language in all_combinations:
+            task = self.bound_evaluate_and_log(sem, context_length, depth_percent, context_language, needle_language)
+            tasks.append(task)
+        
+        # for context_length in self.context_lengths:
+        #     for depth_percent in self.document_depth_percents:
+        #         for context_language in ['en', 'zh']:
+        #             for needle_language in ['en', 'zh']:
+        #                 task = self.bound_evaluate_and_log(sem, context_length, depth_percent, context_language, needle_language)
+        #                 tasks.append(task)
 
         # Wait for all tasks to complete
         await asyncio.gather(*tasks)
 
-    async def evaluate_and_log(self, context_length, depth_percent):
+    async def evaluate_and_log(self, context_length, depth_percent, context_language, needle_language):
         # Checks to see if you've already checked a length/percent/version.
         # This helps if the program stop running and you want to restart later
-        if self.save_results:
-            if self.result_exists(context_length, depth_percent):
-                return
+        if '/' in self.evaluation_model.model_name:
+            parts = self.evaluation_model.model_name.split('/')
+        # 获取 '/' 后面的部分，即分割后列表的第二个元素
+            model_specific_part = parts[1]
+        else:
+            model_specific_part = self.evaluation_model.model_name
+        
+        
+        # for context_language in ['en', 'zh']:
+        #     for needle_language in ['en', 'zh']:
+        
+        if self.result_exists(context_length, depth_percent, model_specific_part, context_language, needle_language):
+            print(f"Result exists for context_length={context_length}, depth_percent={depth_percent}, model_specific_part={model_specific_part}, context_language={context_language}, needle_language={needle_language}")
+            return True
+                    
+        
+                
+        # if self.save_results:
+        #     if self.result_exists(context_length, depth_percent, model_specific_part):
+        #         return
 
         # Go generate the required length context and place your needle statement in
         context = await self.generate_context(context_length, depth_percent)
@@ -171,91 +205,139 @@ class LLMNeedleHaystackTester:
         test_elapsed_time = test_end_time - test_start_time
 
         # Compare the reponse to the actual needle you placed
-        score = self.evaluation_model.evaluate_response(response)
-
+        score, reasoning = await self.evaluation_model.evaluate_response(response)
+        eval_end_time = time.time()
+        eval_elapsed_time = eval_end_time - test_end_time
+        
+        # 上下文语言判断
+        context_language = self.language_detection(context)
+        print({"context_language":context_language})
+        
+        # needle语言判断
+        needle_language = self.language_detection(self.needle)
+        print({"needle_language":needle_language})
+        
         results = {
             # 'context' : context, # Uncomment this line if you'd like to save the context the model was asked to retrieve from. Warning: This will become very large.
             'model' : self.model_name,
             'context_length' : int(context_length),
             'depth_percent' : float(depth_percent),
             'version' : self.results_version,
+            'question' : self.retrieval_question,
             'needle' : self.needle,
             'model_response' : response,
             'score' : score,
+            'reasoning' : reasoning,
             'test_duration_seconds' : test_elapsed_time,
-            'test_timestamp_utc' : datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S%z')
+            'test_timestamp_utc' : datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S%z'),
+            'evaluator' : model_specific_part,
+            'eval_duration_seconds' : eval_elapsed_time,
+            'haystack_dir' : self.haystack_dir,
+            'context_language' : context_language,
+            'needle_language' : needle_language
         }
 
         self.testing_results.append(results)
 
         if self.print_ongoing_status:
-            print (f"-- Test Summary -- ")
+            print (f"\n-- Test Summary -- ")
+            print (f"Model: {self.model_name}")
             print (f"Duration: {test_elapsed_time:.1f} seconds")
             print (f"Context: {context_length} tokens")
             print (f"Depth: {depth_percent}%")
             print (f"Score: {score}")
-            print (f"Response: {response}\n")
+            print (f"Reasoning: {reasoning}")
+            print (f"Response: {response}")
+            print(f"Eval_duration_seconds: {eval_elapsed_time:.1f} seconds\n")
             
-        # 上下文语言判断
-        context_language = self.language_detection(context)
-        print({"context_language":context_language})
+        
 
-        context_file_location = f'{self.model_name.replace(".", "_")}_len_{context_length}_depth_{int(depth_percent*100)}_{context_language}'
-
+        # context_file_location = f'{self.model_name.replace(".", "_")}_len_{context_length}_depth_{int(depth_percent*100)}_{context_language}_{self.start_time_str}'
+        context_file_location = f'{self.model_name.replace(".", "_")}_{context_language}_{self.start_time_str}_{model_specific_part}_{needle_language}'
+        
         base_dir = os.path.abspath(os.path.dirname(__file__))
         parent_dir = os.path.abspath(os.path.join(base_dir, os.pardir))
         print({"base_dir":base_dir})
         if self.save_contexts:
             results['file_name'] = context_file_location
 
-            contexts_dir = os.path.join(parent_dir, 'contexts/')
+            contexts_dir = os.path.join(parent_dir, self.context_dir, f'context_{context_language}_{needle_language}_needle/')
             print({"contexts_dir":contexts_dir})
             
             # Save the context to file for retesting
             if not os.path.exists(contexts_dir):
                 os.makedirs(contexts_dir)
 
-            with open(f'{contexts_dir}_context_{context_file_location}.txt', 'w') as f:
+            with open(f'{contexts_dir}_context_len_{context_length}_depth_{int(depth_percent)}%_{context_file_location}.txt', 'w') as f:
                 f.write(context)
             
         if self.save_results:
-            results_dir = os.path.join(parent_dir, 'results/')
+            results_dir = os.path.join(parent_dir, self.results_dir, f'context_{context_language}_{needle_language}_needle/')
             # Save the context to file for retesting
             if not os.path.exists(results_dir):
                 os.makedirs(results_dir)
             
             print({"results_dir":results_dir})
                
-            # needle语言判断
-            needle_language = self.language_detection(self.needle)
+            
             
             # Save the result to file for retesting
-            with open(f'{results_dir}{context_file_location}_results_{needle_language}.json', 'w') as f:
-                json.dump(testing_results, f)
-
+            # with open(f'{results_dir}{context_file_location}_results_{needle_language}.json', 'a') as f:
+            #     json.dump(self.testing_results, f)
+            
+            if not os.path.exists(f'{results_dir}{context_file_location}_results.json'):
+                with open(f'{results_dir}{context_file_location}_results.json', 'w') as f:
+                    f.write('[]')
+                
+            with open(f'{results_dir}{context_file_location}_results.json', 'r+') as f:
+                data = json.load(f)
+                data.append(results)
+                f.seek(0)  # 重置文件指针到开头
+                json.dump(data, f, ensure_ascii=False, indent=4)  # 写回修改后的数据
+                
         if self.seconds_to_sleep_between_completions:
             await asyncio.sleep(self.seconds_to_sleep_between_completions)
 
-    def result_exists(self, context_length, depth_percent):
+    def result_exists(self, context_length, depth_percent, evaluator_name, context_language, needle_language):
         """
         Checks to see if a result has already been evaluated or not
         """
         base_dir = os.path.abspath(os.path.dirname(__file__))
         parent_dir = os.path.abspath(os.path.join(base_dir, os.pardir))
-        results_dir = os.path.join(parent_dir, 'results/')
+        
+        results_dir = os.path.join(parent_dir, self.results_dir, f'context_{context_language}_{needle_language}_needle/')
         # results_dir = 'results/'
         if not os.path.exists(results_dir):
             return False
         for filename in os.listdir(results_dir):
             if filename.endswith('.json'):
                 with open(os.path.join(results_dir, filename), 'r') as f:
-                    result = json.load(f)
-                    context_length_met = result['context_length'] == context_length
-                    depth_percent_met = result['depth_percent'] == depth_percent
-                    version_met = result.get('version', 1) == self.results_version
-                    model_met = result['model'] == self.model_name
-                    if context_length_met and depth_percent_met and version_met and model_met:
-                        return True
+                    try:
+                        results = json.load(f)
+                    except json.JSONDecodeError:
+                        print(f"Error decoding JSON from {filename}")
+                        continue  # Skip this file and move to the next
+                    if isinstance(results, list):
+                        for result in results:
+                            context_length_met = result['context_length'] == context_length
+                            depth_percent_met = result['depth_percent'] == depth_percent
+                            version_met = result.get('version', 1) == self.results_version
+                            model_met = result['model'] == self.model_name
+                            evaluator_met = result['evaluator'] == evaluator_name
+                            haystack_dir_met = result['haystack_dir'] == self.haystack_dir
+                            if context_length_met and depth_percent_met and version_met and model_met and evaluator_met and haystack_dir_met:
+                                return True
+                    elif isinstance(results, dict):
+                        context_length_met = results['context_length'] == context_length
+                        depth_percent_met = results['depth_percent'] == depth_percent
+                        version_met = results.get('version', 1) == self.results_version
+                        model_met = results['model'] == self.model_name
+                        evaluator_met = results['evaluator'] == evaluator_name
+                        if context_length_met and depth_percent_met and version_met and model_met and evaluator_met:
+                            return True
+                    else:
+                        print(f"Unexpected format in {filename}")
+                        return False
         return False
 
     async def generate_context(self, context_length, depth_percent):
@@ -294,12 +376,16 @@ class LLMNeedleHaystackTester:
 
             # tokens_new_context represents the tokens before the needle
             tokens_new_context = tokens_context[:insertion_point]
-
+            
+            punctuations = ['. ', '。', '? ', '？', '! ', '！', ', ', '，']
+            punctuation_tokens = [self.model_to_test.encode_text_to_tokens(punc.strip()) for punc in punctuations]
+            flat_list = [item for sublist in punctuation_tokens for item in sublist]
+            
             # We want to make sure that we place our needle at a sentence break so we first see what token a '.' is
-            period_tokens = self.model_to_test.encode_text_to_tokens('.')
+            # period_tokens = self.model_to_test.encode_text_to_tokens('. 。')
             
             # Then we iteration backwards until we find the first period
-            while tokens_new_context and tokens_new_context[-1] not in period_tokens:
+            while tokens_new_context and tokens_new_context[-1] not in flat_list:
                 insertion_point -= 1
                 tokens_new_context = tokens_context[:insertion_point]
 
@@ -313,6 +399,14 @@ class LLMNeedleHaystackTester:
 
     def get_context_length_in_tokens(self, context):
         return len(self.model_to_test.encode_text_to_tokens(context))
+    
+    def detect_encoding(self,file_path):
+        import chardet
+        with open(file_path, 'rb') as file:
+            # 读取足够的数据来检测编码，可以读取较大的数据以提高准确性
+            data = file.read(100000)
+            encoding = chardet.detect(data)['encoding']
+            return encoding
 
     def read_context_files(self):
         context = ""
@@ -321,7 +415,8 @@ class LLMNeedleHaystackTester:
 
         while self.get_context_length_in_tokens(context) < max_context_length:
             for file in glob.glob(os.path.join(base_dir, self.haystack_dir, "*.txt")):
-                with open(file, 'r') as f:
+                original_encoding = self.detect_encoding(file)
+                with open(file, 'r',encoding=original_encoding) as f:
                     context += f.read()
                     length_tokens = self.get_context_length_in_tokens(context)
         return context
