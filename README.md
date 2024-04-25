@@ -1,6 +1,7 @@
 #  Local LLMs Testing 
 
-在 [LLMTest_NeedleInAHaystack](https://github.com/gkamradt/LLMTest_NeedleInAHaystack) 测试方法中加入了本地模型的测试，目前支持qwen7b-chat。
+在 [LLMTest_NeedleInAHaystack](https://github.com/gkamradt/LLMTest_NeedleInAHaystack) 测试方法中加入了本地模型的测试，目前支持qwen系列(7b,14b,32b)。
+评估模型可以使用本地模型或者在线api
 
 # 目前支持的测试方法：
 ## 1. 考题测试
@@ -9,9 +10,10 @@
     主要测试模型长文本推理能力
 
 # Rodamap
-  * 本地模型评估
-  * CPU推理测试
-  * 性能测试
+- [x] 本地评估模型 ✓
+- [x] 本地测试模型 ✓
+- [x] CPU推理测试 ✓
+- [x] 性能测试 ✓
 
 
 # Thanks
