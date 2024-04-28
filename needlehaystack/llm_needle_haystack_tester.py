@@ -41,6 +41,7 @@ class LLMNeedleHaystackTester:
                  final_context_length_buffer = 200,
                  seconds_to_sleep_between_completions = None,
                  print_ongoing_status = True,
+                 multi_needles = 0,
                  **kwargs):
         """
         :model_to_test: The model to test. Default is None.
@@ -82,6 +83,11 @@ class LLMNeedleHaystackTester:
         self.seconds_to_sleep_between_completions = seconds_to_sleep_between_completions
         self.print_ongoing_status = print_ongoing_status
         self.testing_results = []
+        if len(needle) > 1:
+            self.multi_needles = 1
+        else:
+            self.multi_needles = 0
+        # self.multi_needles = multi_needles
 
 
         if context_lengths is None:
@@ -116,6 +122,7 @@ class LLMNeedleHaystackTester:
         self.start_time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.results_dir = result_dir
         self.context_dir = context_dir
+        
 
     def logistic(self, x, L=100, x0=50, k=.1):
         if x in [0, 100]:
@@ -150,10 +157,10 @@ class LLMNeedleHaystackTester:
         tasks = []
         
         # 生成所有参数组合
-        all_combinations = product(self.context_lengths, self.document_depth_percents, ['en', 'zh'], ['en', 'zh'])
+        all_combinations = product(self.context_lengths, self.document_depth_percents)
 
-        for context_length, depth_percent, context_language, needle_language in all_combinations:
-            task = self.bound_evaluate_and_log(sem, context_length, depth_percent, context_language, needle_language)
+        for context_length, depth_percent in all_combinations:
+            task = self.bound_evaluate_and_log(sem, context_length, depth_percent)
             tasks.append(task)
         
         # for context_length in self.context_lengths:
@@ -166,7 +173,7 @@ class LLMNeedleHaystackTester:
         # Wait for all tasks to complete
         await asyncio.gather(*tasks)
 
-    async def evaluate_and_log(self, context_length, depth_percent, context_language, needle_language):
+    async def evaluate_and_log(self, context_length, depth_percent):
         # Checks to see if you've already checked a length/percent/version.
         # This helps if the program stop running and you want to restart later
         if '/' in self.evaluation_model.model_name:
@@ -177,18 +184,23 @@ class LLMNeedleHaystackTester:
             model_specific_part = self.evaluation_model.model_name
         
         
-        # for context_language in ['en', 'zh']:
-        #     for needle_language in ['en', 'zh']:
         
-        if self.result_exists(context_length, depth_percent, model_specific_part, context_language, needle_language):
-            print(f"Result exists for context_length={context_length}, depth_percent={depth_percent}, model_specific_part={model_specific_part}, context_language={context_language}, needle_language={needle_language}")
-            return True
+        # needle语言判断
+        needle_language = self.language_detection(self.needle)
+        
+        
+        context = self.read_context_files()
+        # 上下文语言判断
+        context_language = self.language_detection(context)
+        
+        
+        if self.save_results:
+            if self.result_exists(context_length, depth_percent, model_specific_part, context_language, needle_language):
+            
+                print(f"Result exists for context_length={context_length}, depth_percent={depth_percent}, model_specific_part={model_specific_part} ,context_language= {context_language}, needle_language={needle_language}")
+                return 
                     
         
-                
-        # if self.save_results:
-        #     if self.result_exists(context_length, depth_percent, model_specific_part):
-        #         return
 
         # Go generate the required length context and place your needle statement in
         context = await self.generate_context(context_length, depth_percent)
@@ -209,13 +221,9 @@ class LLMNeedleHaystackTester:
         eval_end_time = time.time()
         eval_elapsed_time = eval_end_time - test_end_time
         
-        # 上下文语言判断
-        context_language = self.language_detection(context)
-        print({"context_language":context_language})
         
-        # needle语言判断
-        needle_language = self.language_detection(self.needle)
-        print({"needle_language":needle_language})
+        
+        
         
         results = {
             # 'context' : context, # Uncomment this line if you'd like to save the context the model was asked to retrieve from. Warning: This will become very large.
@@ -234,7 +242,9 @@ class LLMNeedleHaystackTester:
             'eval_duration_seconds' : eval_elapsed_time,
             'haystack_dir' : self.haystack_dir,
             'context_language' : context_language,
-            'needle_language' : needle_language
+            'needle_language' : needle_language,
+            'multi_needles' : self.multi_needles,
+            'length_of_needles' : len(self.needle),
         }
 
         self.testing_results.append(results)
@@ -297,6 +307,21 @@ class LLMNeedleHaystackTester:
                 
         if self.seconds_to_sleep_between_completions:
             await asyncio.sleep(self.seconds_to_sleep_between_completions)
+            
+    def check_result_match(self, result, context_length, depth_percent, evaluator_name):
+        """
+        Helper method to check if the results match the given parameters.
+        """
+        context_length_met = result['context_length'] == context_length
+        depth_percent_met = result['depth_percent'] == depth_percent
+        version_met = result.get('version', 1) == self.results_version
+        model_met = result['model'] == self.model_name
+        evaluator_met = result['evaluator'] == evaluator_name
+        haystack_dir_met = result['haystack_dir'] == self.haystack_dir
+        length_of_needles_met = result['length_of_needles'] == len(self.needle)
+
+        return all([context_length_met, depth_percent_met, version_met, model_met, evaluator_met, haystack_dir_met, length_of_needles_met])
+
 
     def result_exists(self, context_length, depth_percent, evaluator_name, context_language, needle_language):
         """
@@ -305,13 +330,27 @@ class LLMNeedleHaystackTester:
         base_dir = os.path.abspath(os.path.dirname(__file__))
         parent_dir = os.path.abspath(os.path.join(base_dir, os.pardir))
         
-        results_dir = os.path.join(parent_dir, self.results_dir, f'context_{context_language}_{needle_language}_needle/')
+        if self.multi_needles:
+            results_dir = os.path.join(parent_dir, self.results_dir, f'context_{context_language}_{needle_language}_multi_needles/')
+        else:
+            results_dir = os.path.join(parent_dir, self.results_dir, f'context_{context_language}_{needle_language}_needle/')
+            
+        
+        
         # results_dir = 'results/'
         if not os.path.exists(results_dir):
             return False
+            
+        # for folder in os.listdir(results_dir):
+        #     if folder.endswith('bak'):
+        #         continue
+            # folder_path  = os.path.join(results_dir,folder)
+            # print({"folder_path":folder_path})
         for filename in os.listdir(results_dir):
+            file_path = os.path.join(results_dir, filename)
+            
             if filename.endswith('.json'):
-                with open(os.path.join(results_dir, filename), 'r') as f:
+                with open(file_path ,'r') as f:
                     try:
                         results = json.load(f)
                     except json.JSONDecodeError:
@@ -319,25 +358,19 @@ class LLMNeedleHaystackTester:
                         continue  # Skip this file and move to the next
                     if isinstance(results, list):
                         for result in results:
-                            context_length_met = result['context_length'] == context_length
-                            depth_percent_met = result['depth_percent'] == depth_percent
-                            version_met = result.get('version', 1) == self.results_version
-                            model_met = result['model'] == self.model_name
-                            evaluator_met = result['evaluator'] == evaluator_name
-                            haystack_dir_met = result['haystack_dir'] == self.haystack_dir
-                            if context_length_met and depth_percent_met and version_met and model_met and evaluator_met and haystack_dir_met:
+                            if self.check_result_match(result, context_length, depth_percent, evaluator_name):
                                 return True
+
+                            
                     elif isinstance(results, dict):
-                        context_length_met = results['context_length'] == context_length
-                        depth_percent_met = results['depth_percent'] == depth_percent
-                        version_met = results.get('version', 1) == self.results_version
-                        model_met = results['model'] == self.model_name
-                        evaluator_met = results['evaluator'] == evaluator_name
-                        if context_length_met and depth_percent_met and version_met and model_met and evaluator_met:
+                        if self.check_result_match(result, context_length, depth_percent, evaluator_name):
                             return True
+                        
                     else:
                         print(f"Unexpected format in {filename}")
                         return False
+            
+            
         return False
 
     async def generate_context(self, context_length, depth_percent):
@@ -352,7 +385,9 @@ class LLMNeedleHaystackTester:
         context = self.encode_and_trim(context, context_length)
 
         # Insert your random statement according to your depth percent
-        context = self.insert_needle(context, depth_percent, context_length)
+        # context = self.insert_needle(context, depth_percent, context_length)
+        
+        context = self.insert_needles(context, depth_percent, context_length)
 
         return context
     
@@ -362,6 +397,7 @@ class LLMNeedleHaystackTester:
 
         # Reducing the context length by 150 buffer. This is to account for system message, the user question, and response.
         context_length -= self.final_context_length_buffer
+        
 
         # If your context + needle are longer than the context length (which it will be), then reduce tokens from the context by the needle length
         if len(tokens_context) + len(tokens_needle) > context_length:
@@ -377,7 +413,7 @@ class LLMNeedleHaystackTester:
             # tokens_new_context represents the tokens before the needle
             tokens_new_context = tokens_context[:insertion_point]
             
-            punctuations = ['. ', '。', '? ', '？', '! ', '！', ', ', '，']
+            punctuations = ['. ', '。', '? ', '？', '! ', '！']
             punctuation_tokens = [self.model_to_test.encode_text_to_tokens(punc.strip()) for punc in punctuations]
             flat_list = [item for sublist in punctuation_tokens for item in sublist]
             
@@ -397,6 +433,63 @@ class LLMNeedleHaystackTester:
         new_context = self.model_to_test.decode_tokens(tokens_new_context)
         return new_context
 
+    
+    def insert_needles(self, context, depth_percent, context_length):
+            tokens_context = self.model_to_test.encode_text_to_tokens(context)
+            context_length -= self.final_context_length_buffer
+
+            # Calculate the total length of all needles in tokens
+            total_needles_length = sum(len(self.model_to_test.encode_text_to_tokens(needle)) for needle in self.needle)
+
+            # Ensure context length accounts for needles
+            if len(tokens_context) + total_needles_length > context_length:
+                tokens_context = tokens_context[:context_length - total_needles_length]
+            
+            # To evenly distribute the needles, we calculate the intervals they need to be inserted.
+            depth_percent_interval = (100 - depth_percent) / len(self.needle)
+            
+            # Reset the insertion percentages list for the current context
+            self.insertion_percentages = []
+
+            # Insert needles at calculated points
+            for needle in self.needle:
+
+                tokens_needle = self.model_to_test.encode_text_to_tokens(needle)
+
+                if depth_percent == 100:
+                    # If your depth percent is 100 (which means your needle is the last thing in the doc), throw it at the end
+                    tokens_context = tokens_context + tokens_needle
+                else:
+                    # Go get the position (in terms of tokens) to insert your needle
+                    insertion_point = int(len(tokens_context) * (depth_percent / 100))
+
+                    # tokens_new_context represents the tokens before the needle
+                    tokens_new_context = tokens_context[:insertion_point]
+
+                    # We want to make sure that we place our needle at a sentence break so we first see what token a '.' is
+                    period_tokens = self.model_to_test.encode_text_to_tokens('.')
+                    
+                    # Then we iteration backwards until we find the first period
+                    while tokens_new_context and tokens_new_context[-1] not in period_tokens:
+                        insertion_point -= 1
+                        tokens_new_context = tokens_context[:insertion_point]
+                        
+                    # Insert the needle into the context at the found position
+                    tokens_context = tokens_context[:insertion_point] + tokens_needle + tokens_context[insertion_point:]
+
+                    # Log 
+                    insertion_percentage = (insertion_point / len(tokens_context)) * 100
+                    self.insertion_percentages.append(insertion_percentage)
+                    print(f"Inserted '{needle}' at {insertion_percentage:.2f}% of the context, total length now: {len(tokens_context)} tokens")
+                    
+                    # Adjust depth for next needle
+                    depth_percent += depth_percent_interval  
+
+            new_context = self.model_to_test.decode_tokens(tokens_context)
+            
+            return new_context
+    
+    
     def get_context_length_in_tokens(self, context):
         return len(self.model_to_test.encode_text_to_tokens(context))
     

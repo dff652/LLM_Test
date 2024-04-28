@@ -11,7 +11,7 @@ import numpy as np
 from .evaluators import Evaluator
 from .llm_needle_haystack_tester import LLMNeedleHaystackTester
 from .providers import ModelProvider
-
+from itertools import product
 
 class LLMMultiNeedleHaystackTester(LLMNeedleHaystackTester):
     """
@@ -26,13 +26,23 @@ class LLMMultiNeedleHaystackTester(LLMNeedleHaystackTester):
     """
     def __init__(self, *args, 
                  needles=[], 
+                 retrieval_question = None,
+                 haystack_dir="PaulGrahamEssays",
                  model_to_test: ModelProvider = None,
                  evaluator: Evaluator = None, 
                  print_ongoing_status = True,
                  eval_set = "multi-needle-eval-sf",
+                 multi_needles = 1,
                  **kwargs):
 
-        super().__init__(*args, model_to_test=model_to_test, **kwargs)
+        super().__init__(*args, 
+                         model_to_test=model_to_test,
+                         needle=needles[0],
+                         haystack_dir=haystack_dir, 
+                         retrieval_question=retrieval_question,
+                         multi_needles=multi_needles,
+                         **kwargs) 
+                
         self.needles = needles
         self.evaluator = evaluator
         self.model_to_test = model_to_test
@@ -40,6 +50,14 @@ class LLMMultiNeedleHaystackTester(LLMNeedleHaystackTester):
         self.model_name = self.model_to_test.model_name
         self.print_ongoing_status = print_ongoing_status
         self.insertion_percentages = []
+        self.retrieval_question = retrieval_question
+        self.haystack_dir = haystack_dir
+        # self.multi_needles = multi_needles
+        
+        if len(needles) > 1:
+            self.multi_needles = 1
+        else:
+            self.multi_needles = 0
 
     async def insert_needles(self, context, depth_percent, context_length):
         """
@@ -158,9 +176,29 @@ class LLMMultiNeedleHaystackTester(LLMNeedleHaystackTester):
             context_length (int): The length of the context in tokens.
             depth_percent (float): The depth percent for needle insertion.
         """
+        
+        if '/' in self.evaluator.model_name:
+            parts = self.evaluator.model_name.split('/')
+        # 获取 '/' 后面的部分，即分割后列表的第二个元素
+            model_specific_part = parts[1]
+        else:
+            model_specific_part = self.evaluator.model_name
+            
+        # needle语言判断
+        needle_language = self.language_detection(self.needle)
+        
+        
+        context = self.read_context_files()
+        # 上下文语言判断
+        context_language = self.language_detection(context)
+        
+        
+        
+        
         if self.save_results:
-            if self.result_exists(context_length, depth_percent):
-                return
+            if self.result_exists(context_length, depth_percent,model_specific_part, context_language, needle_language):
+                print(f"Result exists for context_length={context_length}, depth_percent={depth_percent}, model_specific_part={model_specific_part} ,context_language= {context_language}, needle_language={needle_language}")
+                return 
 
         # Go generate the required length context and place your needle statement in
         context = await self.generate_context(context_length, depth_percent)
@@ -177,60 +215,126 @@ class LLMMultiNeedleHaystackTester(LLMNeedleHaystackTester):
             test_elapsed_time = test_end_time - test_start_time
 
         else:
-            print("EVALUATOR: OpenAI Model")
+            print(f"EVALUATOR: {self.evaluator.model_name}")
             # Prepare your message to send to the model you're going to evaluate
             prompt = self.model_to_test.generate_prompt(context, self.retrieval_question)
             # Go see if the model can answer the question to pull out your random fact
             response = await self.model_to_test.evaluate_model(prompt)
             # Compare the reponse to the actual needle you placed
-            score = self.evaluation_model.evaluate_response(response)
-
+            # score = self.evaluator.evaluate_response(response)
             test_end_time = time.time()
             test_elapsed_time = test_end_time - test_start_time
+            
+            score, reasoning = await self.evaluator.evaluate_response(response)
 
+            eval_end_time = time.time()
+            eval_elapsed_time = eval_end_time - test_end_time
+            
+
+            # results = {
+            # # 'context' : context, # Uncomment this line if you'd like to save the context the model was asked to retrieve from. Warning: This will become very large.
+            # 'model' : self.model_to_test.model_name,
+            # 'context_length' : int(context_length),
+            # 'depth_percent' : float(depth_percent),
+            # 'version' : self.results_version,
+            # 'needle' : self.needle,
+            # 'model_response' : response,
+            # 'score' : score,
+            # 'test_duration_seconds' : test_elapsed_time,
+            # 'test_timestamp_utc' : datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S%z')
+            # }
+            
             results = {
             # 'context' : context, # Uncomment this line if you'd like to save the context the model was asked to retrieve from. Warning: This will become very large.
-            'model' : self.model_to_test.model_name,
+            'model' : self.model_name,
             'context_length' : int(context_length),
             'depth_percent' : float(depth_percent),
             'version' : self.results_version,
+            'question' : self.retrieval_question,
             'needle' : self.needle,
             'model_response' : response,
             'score' : score,
+            'reasoning' : reasoning,
             'test_duration_seconds' : test_elapsed_time,
-            'test_timestamp_utc' : datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S%z')
-            }
+            'test_timestamp_utc' : datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S%z'),
+            'evaluator' : model_specific_part,
+            'eval_duration_seconds' : eval_elapsed_time,
+            'haystack_dir' : self.haystack_dir,
+            'context_language' : context_language,
+            'needle_language' : needle_language,
+            'multi_needles' : self.multi_needles,
+            'length_of_needles' : len(self.needles),
+        }
 
             self.testing_results.append(results)
 
             if self.print_ongoing_status:
-                print (f"-- Test Summary -- ")
+                print (f"\n-- Test Summary -- ")
+                print (f"Model: {self.model_name}")
                 print (f"Duration: {test_elapsed_time:.1f} seconds")
                 print (f"Context: {context_length} tokens")
                 print (f"Depth: {depth_percent}%")
                 print (f"Score: {score}")
-                print (f"Response: {response}\n")
+                print (f"Reasoning: {reasoning}")
+                print (f"Response: {response}")
+                print(f"Eval_duration_seconds: {eval_elapsed_time:.1f} seconds\n")
 
-            context_file_location = f'{self.model_name.replace(".", "_")}_len_{context_length}_depth_{int(depth_percent*100)}'
-
+            # context_file_location = f'{self.model_name.replace(".", "_")}_len_{context_length}_depth_{int(depth_percent*100)}'
+            
+            context_file_location = f'{self.model_name.replace(".", "_")}_{context_language}_{self.start_time_str}_{model_specific_part}_{needle_language}'
+            base_dir = os.path.abspath(os.path.dirname(__file__))
+            parent_dir = os.path.abspath(os.path.join(base_dir, os.pardir))
+            
             if self.save_contexts:
                 results['file_name'] = context_file_location
 
+                contexts_dir = os.path.join(parent_dir, self.context_dir, f'context_{context_language}_{needle_language}_multi_needles/')
+                print({"contexts_dir":contexts_dir})
+            
                 # Save the context to file for retesting
-                if not os.path.exists('contexts'):
-                    os.makedirs('contexts')
+                if not os.path.exists(contexts_dir):
+                    os.makedirs(contexts_dir)
 
-                with open(f'contexts/{context_file_location}_context.txt', 'w') as f:
+                with open(f'{contexts_dir}_context_len_{context_length}_depth_{int(depth_percent)}%_{context_file_location}.txt', 'w') as f:
                     f.write(context)
                 
             if self.save_results:
+                results_dir = os.path.join(parent_dir, self.results_dir, f'context_{context_language}_{needle_language}_multi_needles/')
                 # Save the context to file for retesting
-                if not os.path.exists('results'):
-                    os.makedirs('results')
+                if not os.path.exists(results_dir):
+                    os.makedirs(results_dir)
+                
+                print({"results_dir":results_dir})
+            
 
-                # Save the result to file for retesting
-                with open(f'results/{context_file_location}_results.json', 'w') as f:
-                    json.dump(results, f)
+                if not os.path.exists(f'{results_dir}{context_file_location}_results.json'):
+                    with open(f'{results_dir}{context_file_location}_results.json', 'w') as f:
+                        f.write('[]')
+                
+                with open(f'{results_dir}{context_file_location}_results.json', 'r+') as f:
+                    data = json.load(f)
+                    data.append(results)
+                    f.seek(0)  # 重置文件指针到开头
+                    json.dump(data, f, ensure_ascii=False, indent=4)  # 写回修改后的数据
+                    
+            # if self.save_contexts:
+            #     results['file_name'] = context_file_location
+
+            #     # Save the context to file for retesting
+            #     if not os.path.exists('contexts'):
+            #         os.makedirs('contexts')
+
+            #     with open(f'contexts/{context_file_location}_context.txt', 'w') as f:
+            #         f.write(context)
+                
+            # if self.save_results:
+            #     # Save the context to file for retesting
+            #     if not os.path.exists('results'):
+            #         os.makedirs('results')
+
+            #     # Save the result to file for retesting
+            #     with open(f'results/{context_file_location}_results.json', 'w') as f:
+            #         json.dump(results, f)
 
             if self.seconds_to_sleep_between_completions:
                 await asyncio.sleep(self.seconds_to_sleep_between_completions)
@@ -244,10 +348,12 @@ class LLMMultiNeedleHaystackTester(LLMNeedleHaystackTester):
 
         # Run through each iteration of context_lengths and depths
         tasks = []
-        for context_length in self.context_lengths:
-            for depth_percent in self.document_depth_percents:
-                task = self.bound_evaluate_and_log(sem, context_length, depth_percent)
-                tasks.append(task)
+        
+        all_combinations = product(self.context_lengths, self.document_depth_percents)
+
+        for context_length, depth_percent in all_combinations:
+            task = self.bound_evaluate_and_log(sem, context_length, depth_percent)
+            tasks.append(task)
 
         # Wait for all tasks to complete
         await asyncio.gather(*tasks)
