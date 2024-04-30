@@ -45,7 +45,8 @@ def single_needle_test(model_name, eval_model, depth_percent, context_length, re
     ht  = LLMNeedleHaystackTester(model_to_test=qwen_model,
                                   evaluator = evaluator,
                                   needle = needle,
-                                  haystack_dir= "PaulGrahamEssays",
+                                #   haystack_dir= "PaulGrahamEssays",
+                                  haystack_dir= "zh_common",
                                   retrieval_question= retrieval_question,
                                   context_lengths = context_length,
                                   document_depth_percents = depth_percent,
@@ -98,7 +99,7 @@ def single_needle_test(model_name, eval_model, depth_percent, context_length, re
 # for model_name in ["qwen1.5-32B-Chat-AWQ",'qwen1.5-14B-Chat',]:
 # model_name = "qwen1.5-MoE-A2.7B-Chat"
 # model_name = "qwen1.5-7B-Chat"
-# model_name = "qwen1.5-32B-Chat-AWQ"
+model_name = "qwen1.5-32B-Chat-AWQ"
 # model_name = 'qwen1.5-14B-Chat'
 # eval_model = 'qwen1.5-14B-Chat'
 # eval_model = 'gpt-3.5-turbo-0125'
@@ -106,12 +107,12 @@ def single_needle_test(model_name, eval_model, depth_percent, context_length, re
 # eval_model = 'meta-llama/Llama-3-70b-chat-hf'
 eval_model = 'Qwen/Qwen1.5-72B-Chat'
 
-needle = "\n在旧金山最好的事情是在一个阳光明媚的日子里吃三明治并坐在多洛雷斯公园。\n"
-retrieval_question = "在旧金山最好的事情是什么？"
+# needle = "\n在旧金山最好的事情是在一个阳光明媚的日子里吃三明治并坐在多洛雷斯公园。\n"
+# retrieval_question = "在旧金山最好的事情是什么？"
 
 
-# needle = "\nThe best thing to do in San Francisco is eat a sandwich and sit in Dolores Park on a sunny day.\n"
-# retrieval_question = "What is the best thing to do in San Francisco?"
+needle = "\nThe best thing to do in San Francisco is eat a sandwich and sit in Dolores Park on a sunny day.\n"
+retrieval_question = "What is the best thing to do in San Francisco?"
 
 context_length = np.arange(500, 10000, 500).tolist()
 depth_percent = np.arange(10, 100, 10).tolist()

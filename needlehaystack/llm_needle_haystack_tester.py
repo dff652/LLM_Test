@@ -42,6 +42,8 @@ class LLMNeedleHaystackTester:
                  seconds_to_sleep_between_completions = None,
                  print_ongoing_status = True,
                  multi_needles = 0,
+                 length_of_needles = 1,
+                 key_word = '',
                  **kwargs):
         """
         :model_to_test: The model to test. Default is None.
@@ -83,11 +85,12 @@ class LLMNeedleHaystackTester:
         self.seconds_to_sleep_between_completions = seconds_to_sleep_between_completions
         self.print_ongoing_status = print_ongoing_status
         self.testing_results = []
-        if len(needle) > 1:
+        if length_of_needles > 1:
             self.multi_needles = 1
         else:
             self.multi_needles = 0
         # self.multi_needles = multi_needles
+        self.length_of_needles = length_of_needles
 
 
         if context_lengths is None:
@@ -122,6 +125,7 @@ class LLMNeedleHaystackTester:
         self.start_time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.results_dir = result_dir
         self.context_dir = context_dir
+        self.key_word_word = key_word
         
 
     def logistic(self, x, L=100, x0=50, k=.1):
@@ -199,6 +203,8 @@ class LLMNeedleHaystackTester:
             
                 print(f"Result exists for context_length={context_length}, depth_percent={depth_percent}, model_specific_part={model_specific_part} ,context_language= {context_language}, needle_language={needle_language}")
                 return 
+            else :
+                print(f"Result not exists for context_length={context_length}, depth_percent={depth_percent}, model_specific_part={model_specific_part} ,context_language= {context_language}, needle_language={needle_language}")
                     
         
 
@@ -244,7 +250,7 @@ class LLMNeedleHaystackTester:
             'context_language' : context_language,
             'needle_language' : needle_language,
             'multi_needles' : self.multi_needles,
-            'length_of_needles' : len(self.needle),
+            'length_of_needles' : self.length_of_needles,
         }
 
         self.testing_results.append(results)
@@ -282,7 +288,7 @@ class LLMNeedleHaystackTester:
                 f.write(context)
             
         if self.save_results:
-            results_dir = os.path.join(parent_dir, self.results_dir, f'context_{context_language}_{needle_language}_needle/')
+            results_dir = os.path.join(parent_dir, self.results_dir, f'context_{context_language}_{needle_language}_needle_{self.key_word_word}/')
             # Save the context to file for retesting
             if not os.path.exists(results_dir):
                 os.makedirs(results_dir)
@@ -318,7 +324,7 @@ class LLMNeedleHaystackTester:
         model_met = result['model'] == self.model_name
         evaluator_met = result['evaluator'] == evaluator_name
         haystack_dir_met = result['haystack_dir'] == self.haystack_dir
-        length_of_needles_met = result['length_of_needles'] == len(self.needle)
+        length_of_needles_met = result['length_of_needles'] == self.length_of_needles
 
         return all([context_length_met, depth_percent_met, version_met, model_met, evaluator_met, haystack_dir_met, length_of_needles_met])
 
@@ -331,9 +337,9 @@ class LLMNeedleHaystackTester:
         parent_dir = os.path.abspath(os.path.join(base_dir, os.pardir))
         
         if self.multi_needles:
-            results_dir = os.path.join(parent_dir, self.results_dir, f'context_{context_language}_{needle_language}_multi_needles/')
+            results_dir = os.path.join(parent_dir, self.results_dir, f'context_{context_language}_{needle_language}_multi_needles_{self.key_word_word}/')
         else:
-            results_dir = os.path.join(parent_dir, self.results_dir, f'context_{context_language}_{needle_language}_needle/')
+            results_dir = os.path.join(parent_dir, self.results_dir, f'context_{context_language}_{needle_language}_needle_{self.key_word_word}/')
             
         
         
@@ -350,6 +356,8 @@ class LLMNeedleHaystackTester:
             file_path = os.path.join(results_dir, filename)
             
             if filename.endswith('.json'):
+                if self.model_name.replace('.', '_') not in filename:
+                    continue
                 with open(file_path ,'r') as f:
                     try:
                         results = json.load(f)
@@ -385,9 +393,9 @@ class LLMNeedleHaystackTester:
         context = self.encode_and_trim(context, context_length)
 
         # Insert your random statement according to your depth percent
-        # context = self.insert_needle(context, depth_percent, context_length)
+        context = self.insert_needle(context, depth_percent, context_length)
         
-        context = self.insert_needles(context, depth_percent, context_length)
+        # context = self.insert_needles(context, depth_percent, context_length)
 
         return context
     
@@ -505,9 +513,11 @@ class LLMNeedleHaystackTester:
         context = ""
         max_context_length = max(self.context_lengths)
         base_dir = os.path.abspath(os.path.dirname(__file__))  # Package directory
-
+        context_path = os.path.join(base_dir, self.haystack_dir)
+        if not os.path.exists(context_path):
+            raise ValueError(f"The context directory {context_path} does not exist.")
         while self.get_context_length_in_tokens(context) < max_context_length:
-            for file in glob.glob(os.path.join(base_dir, self.haystack_dir, "*.txt")):
+            for file in glob.glob(os.path.join(context_path, "*.txt")):
                 original_encoding = self.detect_encoding(file)
                 with open(file, 'r',encoding=original_encoding) as f:
                     context += f.read()

@@ -13,6 +13,10 @@ from .llm_needle_haystack_tester import LLMNeedleHaystackTester
 from .providers import ModelProvider
 from itertools import product
 
+from zoneinfo import ZoneInfo
+# 设置为北京时区
+beijing_timezone = ZoneInfo("Asia/Shanghai")
+
 class LLMMultiNeedleHaystackTester(LLMNeedleHaystackTester):
     """
     Extends LLMNeedleHaystackTester to support testing with multiple needles in the haystack.
@@ -33,6 +37,7 @@ class LLMMultiNeedleHaystackTester(LLMNeedleHaystackTester):
                  print_ongoing_status = True,
                  eval_set = "multi-needle-eval-sf",
                  multi_needles = 1,
+                 key_word = '',
                  **kwargs):
 
         super().__init__(*args, 
@@ -41,11 +46,13 @@ class LLMMultiNeedleHaystackTester(LLMNeedleHaystackTester):
                          haystack_dir=haystack_dir, 
                          retrieval_question=retrieval_question,
                          multi_needles=multi_needles,
+                         length_of_needles = len(needles),
+                         key_word=key_word,
                          **kwargs) 
                 
         self.needles = needles
         self.evaluator = evaluator
-        self.model_to_test = model_to_test
+        self.model_to_test = model_to_test                  
         self.eval_set = eval_set
         self.model_name = self.model_to_test.model_name
         self.print_ongoing_status = print_ongoing_status
@@ -53,8 +60,9 @@ class LLMMultiNeedleHaystackTester(LLMNeedleHaystackTester):
         self.retrieval_question = retrieval_question
         self.haystack_dir = haystack_dir
         # self.multi_needles = multi_needles
+        self.key_word_word = key_word
         
-        if len(needles) > 1:
+        if len(needles) > 1:            
             self.multi_needles = 1
         else:
             self.multi_needles = 0
@@ -256,7 +264,7 @@ class LLMMultiNeedleHaystackTester(LLMNeedleHaystackTester):
             'score' : score,
             'reasoning' : reasoning,
             'test_duration_seconds' : test_elapsed_time,
-            'test_timestamp_utc' : datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S%z'),
+            'test_timestamp_utc' : datetime.now(beijing_timezone).strftime('%Y-%m-%d %H:%M:%S%z'),
             'evaluator' : model_specific_part,
             'eval_duration_seconds' : eval_elapsed_time,
             'haystack_dir' : self.haystack_dir,
@@ -299,7 +307,7 @@ class LLMMultiNeedleHaystackTester(LLMNeedleHaystackTester):
                     f.write(context)
                 
             if self.save_results:
-                results_dir = os.path.join(parent_dir, self.results_dir, f'context_{context_language}_{needle_language}_multi_needles/')
+                results_dir = os.path.join(parent_dir, self.results_dir, f'context_{context_language}_{needle_language}_multi_needles_{self.key_word_word}/')
                 # Save the context to file for retesting
                 if not os.path.exists(results_dir):
                     os.makedirs(results_dir)
