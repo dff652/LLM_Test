@@ -1,4 +1,4 @@
-from needlehaystack import LLMNeedleHaystackTester, LLMExamTester, LLMEvaluator
+from needlehaystack import LLMNeedleHaystackTester, LLMExamTester, LLMEvaluator, LLMMultiNeedleHaystackTester
 from needlehaystack.providers import qwen
 from needlehaystack.evaluators import openai, qwen_eval, together_api
 import tqdm
@@ -26,8 +26,8 @@ from retry import retry
 #                               document_depth_percents = depth_percent,)
 # ht.start_test()
 
-@retry(tries=5, delay=2)
-def test_qwen(model_name, eval_model, depth_percent, context_length, retrieval_question, needle):
+# @retry(tries=3, delay=1)
+def single_needle_test(model_name, eval_model, depth_percent, context_length, retrieval_question, needle):
     qwen_model = qwen.Qwen(model_name= model_name)
     if 'gpt' in eval_model :
         evaluator = openai.OpenAIEvaluator(model_name=eval_model,
@@ -45,7 +45,8 @@ def test_qwen(model_name, eval_model, depth_percent, context_length, retrieval_q
     ht  = LLMNeedleHaystackTester(model_to_test=qwen_model,
                                   evaluator = evaluator,
                                   needle = needle,
-                                  haystack_dir= "Test",
+                                #   haystack_dir= "PaulGrahamEssays",
+                                  haystack_dir= "zh_common",
                                   retrieval_question= retrieval_question,
                                   context_lengths = context_length,
                                   document_depth_percents = depth_percent,
@@ -63,10 +64,7 @@ def test_qwen(model_name, eval_model, depth_percent, context_length, retrieval_q
     #                       )
     print(66666)
     ht.start_test()
-    
-# for depth in tqdm.tqdm(range(10,100,20)):
-#     for context in range(100, 1000, 200):
-#         test_qwen([depth], [context], retrieval_question, needle)
+
 
 # 第一轮测试
 # needle = "\nThe best thing to do in San Francisco is eat a sandwich and sit in Dolores Park on a sunny day.\n"
@@ -101,7 +99,7 @@ def test_qwen(model_name, eval_model, depth_percent, context_length, retrieval_q
 # for model_name in ["qwen1.5-32B-Chat-AWQ",'qwen1.5-14B-Chat',]:
 # model_name = "qwen1.5-MoE-A2.7B-Chat"
 # model_name = "qwen1.5-7B-Chat"
-# model_name = "qwen1.5-32B-Chat-AWQ"
+model_name = "qwen1.5-32B-Chat-AWQ"
 # model_name = 'qwen1.5-14B-Chat'
 # eval_model = 'qwen1.5-14B-Chat'
 # eval_model = 'gpt-3.5-turbo-0125'
@@ -118,47 +116,19 @@ retrieval_question = "What is the best thing to do in San Francisco?"
 
 context_length = np.arange(500, 10000, 500).tolist()
 depth_percent = np.arange(10, 100, 10).tolist()
-for model_name in ["qwen1.5-7B-Chat", "qwen1.5-14B-Chat", "qwen1.5-MoE-A2.7B-Chat",  "qwen1.5-32B-Chat-AWQ"]:
-    test_qwen(model_name, eval_model,depth_percent, context_length, retrieval_question, needle)  
+
+single_needle_test(model_name, eval_model, depth_percent, context_length, retrieval_question, needle)
+
+# for model_name in ["qwen1.5-7B-Chat", "qwen1.5-14B-Chat", "qwen1.5-MoE-A2.7B-Chat",  "qwen1.5-32B-Chat-AWQ"]:
+    
+#     try:
+#         test_qwen(model_name, eval_model, depth_percent, context_length, retrieval_question, needle)
+#     except Exception as e:
+#         print(f"Error testing model {model_name}: {str(e)}") 
 
 
 
 
-# exam_path = '/home/dff652/benchmarks/LLM_Test/needlehaystack/Exam/test_0.4_en.xlsx'
-# exam_path = '/home/dff652/benchmarks/LLM_Test/needlehaystack/Exam/test_0.4_zh.xlsx'
 
-# qwen_model = qwen.Qwen(model_name = model_name)
-# ht = LLMExamTester(model_to_test=qwen_model,
-#                         # evaluator = openai_evaluator,
-#                         #   question = retrieval_question,
-#                         question_type = "exam",
-#                         question_path = exam_path,
-#                         exam_results_dir = "",
-#                         exam_set = "exam",
-#                         num_concurrent_requests = 50,
-#                         frac = 1,
-#                         results_version = 0.4
-#                         )
-# print(66666)
-# ht.start_test()
 
-# openai_evaluator = openai.OpenAIEvaluator(model_name="gpt-3.5-turbo-0125",
-#                                             true_answer = 'needle',
-#                                             question_asked = 'retrieval_question'
-#                                             )
-
-# qwen_evaluator = qwen_eval.QwenEvaluator(model_name=model_name)
-
-# exam_path = '/home/dff652/benchmarks/test_res/test_eng/qwen1_5-7B-Chat_question_type_exam_20240408_141046_50_human_eval.csv'
-
-# he = LLMEvaluator(evaluator = qwen_evaluator,
-#                   read_results_path = exam_path,
-                  
-#                   num_concurrent_requests = 20,
-#                   frac = 1
-#                   )
-
-# print(777777)
-# he.start_eval()
-                  
 
