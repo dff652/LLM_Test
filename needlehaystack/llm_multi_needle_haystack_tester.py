@@ -123,7 +123,11 @@ class LLMMultiNeedleHaystackTester(LLMNeedleHaystackTester):
                 tokens_new_context = tokens_context[:insertion_point]
 
                 # We want to make sure that we place our needle at a sentence break so we first see what token a '.' is
-                period_tokens = self.model_to_test.encode_text_to_tokens('.')
+                period_tokens = self.model_to_test.encode_text_to_tokens('。')
+                
+                # punctuations = ['. ', '。', '? ', '？', '! ', '！']
+                # punctuation_tokens = [self.model_to_test.encode_text_to_tokens(punc.strip()) for punc in punctuations]
+                # flat_list = [item for sublist in punctuation_tokens for item in sublist]
                 
                 # Then we iteration backwards until we find the first period
                 while tokens_new_context and tokens_new_context[-1] not in period_tokens:
@@ -143,6 +147,49 @@ class LLMMultiNeedleHaystackTester(LLMNeedleHaystackTester):
 
         new_context = self.model_to_test.decode_tokens(tokens_context)
         return new_context
+    
+    # def find_insertion_point(tokens_context, current_index):
+    #     # 定义标点符号及其后应跟空格的列表
+    #     punctuations = ['.', '?', '!', '。', '？', '！']
+    #     punctuation_tokens = [self.model_to_test.encode_text_to_tokens(punc) for punc in punctuations]
+    #     flat_list = [item for sublist in punctuation_tokens for item in sublist]
+
+    #     # 向前搜索，找到适合插入的标点位置
+    #     while current_index > 0 and tokens_context[current_index - 1] not in flat_list:
+    #         current_index -= 1
+    #     return current_index
+
+    # async def insert_needles(self, context, depth_percent, context_length):
+    #     tokens_context = self.model_to_test.encode_text_to_tokens(context)
+    #     context_length -= self.final_context_length_buffer
+
+    #     # 总needle长度计算
+    #     total_needles_length = sum(len(self.model_to_test.encode_text_to_tokens(needle)) for needle in self.needles)
+    #     if len(tokens_context) + total_needles_length > context_length:
+    #         tokens_context = tokens_context[:context_length - total_needles_length]
+
+    #     # 插入needles
+    #     insertion_percentages = [depth_percent]
+    #     for i, needle in enumerate(self.needles):
+    #         tokens_needle = self.model_to_test.encode_text_to_tokens(needle)
+    #         if i > 0:
+    #             # 每次插入后根据新的总长度调整插入比例
+    #             current_depth_percent = insertion_percentages[-1]
+    #             next_insertion_point = int((current_depth_percent / 100) * len(tokens_context))
+    #             next_insertion_point = find_insertion_point(tokens_context, next_insertion_point)
+    #         else:
+    #             next_insertion_point = int((depth_percent / 100) * len(tokens_context))
+
+    #         # 插入needle
+    #         tokens_context = tokens_context[:next_insertion_point] + tokens_needle + tokens_context[next_insertion_point:]
+
+    #         # 更新插入点百分比和插入位置
+    #         new_insertion_percentage = (next_insertion_point / len(tokens_context)) * 100
+    #         insertion_percentages.append(new_insertion_percentage + ((100 - new_insertion_percentage) / len(self.needles)))
+
+    #     new_context = self.model_to_test.decode_tokens(tokens_context)
+    #     return new_context
+
 
     def encode_and_trim(self, context, context_length):
         """
@@ -296,7 +343,7 @@ class LLMMultiNeedleHaystackTester(LLMNeedleHaystackTester):
             if self.save_contexts:
                 results['file_name'] = context_file_location
 
-                contexts_dir = os.path.join(parent_dir, self.context_dir, f'context_{context_language}_{needle_language}_multi_needles/')
+                contexts_dir = os.path.join(parent_dir, self.context_dir, f'context_{context_language}_{needle_language}_multi_needles_{self.key_word_word}/')
                 print({"contexts_dir":contexts_dir})
             
                 # Save the context to file for retesting
