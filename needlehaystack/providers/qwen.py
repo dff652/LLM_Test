@@ -16,12 +16,13 @@ from langchain import PromptTemplate
 from .model import ModelProvider
 from accelerate import init_empty_weights, infer_auto_device_map, load_checkpoint_and_dispatch
 model_dict ={
-    "qwen1.5-7B-Chat": "/home/dff652/llm_models/qwen/Qwen1___5-7B-Chat/",
-    "qwen1.5-14B": "/home/dff652/llm_models/qwen/Qwen1___5-14B/",
-    "qwen1.5-MoE-A2.7B-Chat": "/home/dff652/llm_models/qwen/Qwen1___5-MoE-A2___7B-Chat/",
-    "qwen1.5-32B-Chat": "/home/dff652/llm_models/qwen/Qwen1___5-32B-Chat/",
-    "qwen1.5-32B-Chat-AWQ": "/home/dff652/llm_models/qwen/Qwen1___5-32B-Chat-AWQ/",
-    "qwen1.5-14B-Chat": "/home/dff652/llm_models/qwen/Qwen1___5-14B-Chat/",
+    "qwen1.5-7B-Chat": "/home/data1/llm_models/qwen/Qwen1___5-7B-Chat/",
+    "qwen1.5-14B": "/home/data1/llm_models/qwen/Qwen1___5-14B/",
+    "qwen1.5-MoE-A2.7B-Chat": "/home/data1/llm_models/qwen/Qwen1___5-MoE-A2___7B-Chat/",
+    "qwen1.5-32B-Chat": "/home/data1/llm_models/qwen/Qwen1___5-32B-Chat/",
+    "qwen1.5-32B-Chat-AWQ": "/home/data1/llm_models/qwen/Qwen1___5-32B-Chat-AWQ/",
+    "qwen1.5-14B-Chat": "/home/data1/llm_models/qwen/Qwen1___5-14B-Chat/",
+    "qwen1.5-110B-Chat-AWQ":"/home/data1/llm_models/qwen/Qwen1___5-110B-Chat-AWQ/"
 }
 
 # os.environ["CUDA_VISIBLE_DEVICES"]="0，1"

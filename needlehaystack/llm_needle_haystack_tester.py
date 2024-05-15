@@ -277,7 +277,7 @@ class LLMNeedleHaystackTester:
         if self.save_contexts:
             results['file_name'] = context_file_location
 
-            contexts_dir = os.path.join(parent_dir, self.context_dir, f'context_{context_language}_{needle_language}_needle/')
+            contexts_dir = os.path.join(parent_dir, self.context_dir, f'context_{context_language}_{needle_language}_needle_{self.key_word_word}/')
             print({"contexts_dir":contexts_dir})
             
             # Save the context to file for retesting
